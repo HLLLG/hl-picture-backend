@@ -8,7 +8,7 @@ public class PageRequest {
     /**
      * 当前页号
      */
-    private int pageNo;
+    private int current;
 
     /**
      * 页面大小
