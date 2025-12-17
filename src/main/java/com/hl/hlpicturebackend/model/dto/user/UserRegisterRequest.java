@@ -1,4 +1,4 @@
-package com.hl.hlpicturebackend.model.dto;
+package com.hl.hlpicturebackend.model.dto.user;
 
 import lombok.Data;
 

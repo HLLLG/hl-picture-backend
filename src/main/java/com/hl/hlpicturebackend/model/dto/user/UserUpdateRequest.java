@@ -1,17 +1,18 @@
-package com.hl.hlpicturebackend.model.vo;
+package com.hl.hlpicturebackend.model.dto.user;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.util.Date;
 
 /**
- * 已登录用户视图（脱敏）
+ * 用户更新请求
  */
 @Data
-public class LoginUserVO implements Serializable {
+public class UserUpdateRequest implements Serializable {
 
-    private static final long serialVersionUID = 6480359053773666735L;
+    private static final long serialVersionUID = 1L;
 
     /**
      * id
@@ -43,18 +44,4 @@ public class LoginUserVO implements Serializable {
      */
     private String userRole;
 
-    /**
-     * 编辑时间
-     */
-    private Date editTime;
-
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
 }
