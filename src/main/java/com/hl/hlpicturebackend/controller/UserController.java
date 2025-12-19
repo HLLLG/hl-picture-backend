@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hl.hlpicturebackend.annotation.AuthCheck;
 import com.hl.hlpicturebackend.common.BaseResponse;
 import com.hl.hlpicturebackend.common.DeleteRequest;
-import com.hl.hlpicturebackend.common.PageRequest;
 import com.hl.hlpicturebackend.common.ResultUtils;
 import com.hl.hlpicturebackend.constant.UserConstant;
 import com.hl.hlpicturebackend.exception.ErrorCode;
