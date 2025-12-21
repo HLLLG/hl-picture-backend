@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "deepclone": "^1.0.2"
+  }
+}
