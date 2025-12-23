@@ -1,5 +1,8 @@
 package com.hl.hlpicturebackend.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.hl.hlpicturebackend.model.dto.picture.PictureQueryRequest;
 import com.hl.hlpicturebackend.model.dto.picture.PictureUploadRequest;
 import com.hl.hlpicturebackend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -8,6 +11,7 @@ import com.hl.hlpicturebackend.model.vo.PictureVO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * @author 21628
@@ -15,6 +19,12 @@ import java.io.IOException;
  * @createDate 2025-12-21 16:25:52
  */
 public interface PictureService extends IService<Picture> {
+
+    /**
+     * 校验图片
+     * @param picture
+     */
+    void validPicture(Picture picture);
 
     /**
      * 上传图片
@@ -26,4 +36,26 @@ public interface PictureService extends IService<Picture> {
      * @throws IOException
      */
     PictureVO uploadPicture(MultipartFile file, PictureUploadRequest pictureUploadRequest, User loginUser);
+
+    /**
+     * 构造查询图片QueryWrapper
+     *
+     * @param pictureQueryRequest
+     * @return
+     */
+    QueryWrapper<Picture> getPictureQueryWrapper(PictureQueryRequest pictureQueryRequest);
+
+    /**
+     * 获取图片包装类一条
+     * @param picture
+     * @return
+     */
+    PictureVO getPictureVO(Picture picture);
+
+    /**
+     * 获取图片包装类多条
+     * @param picturePage
+     * @return
+     */
+    Page<PictureVO> getPictureVOPage(Page<Picture> picturePage);
 }

@@ -69,6 +69,12 @@ public class UserController {
         return ResultUtils.success(userService.getLoginUserVO(user));
     }
 
+    /**
+     * 注销用户
+     *
+     * @param request
+     * @return
+     */
     @PostMapping("/logout")
     public BaseResponse<Boolean> logoutUser(HttpServletRequest request) {
         ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
