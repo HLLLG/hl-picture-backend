@@ -21,6 +21,12 @@ import java.util.List;
 public interface PictureService extends IService<Picture> {
 
     /**
+     * 校验图片
+     * @param picture
+     */
+    void validPicture(Picture picture);
+
+    /**
      * 上传图片
      *
      * @param file
