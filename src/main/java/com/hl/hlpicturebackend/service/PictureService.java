@@ -3,6 +3,7 @@ package com.hl.hlpicturebackend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hl.hlpicturebackend.model.dto.picture.PictureQueryRequest;
+import com.hl.hlpicturebackend.model.dto.picture.PictureReviewRequest;
 import com.hl.hlpicturebackend.model.dto.picture.PictureUploadRequest;
 import com.hl.hlpicturebackend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -10,6 +11,7 @@ import com.hl.hlpicturebackend.model.entity.User;
 import com.hl.hlpicturebackend.model.vo.PictureVO;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
 
@@ -58,4 +60,20 @@ public interface PictureService extends IService<Picture> {
      * @return
      */
     Page<PictureVO> getPictureVOPage(Page<Picture> picturePage);
+
+    /**
+     * 审核图片
+     *
+     * @param pictureReviewRequest
+     * @param loginUser
+     * @return
+     */
+    void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser);
+
+    /**
+     * 填充审核参数
+     * @param picture
+     * @param loginUser
+     */
+    void fillReviewParams(Picture picture, User loginUser);
 }
