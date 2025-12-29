@@ -4,12 +4,13 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hl.hlpicturebackend.exception.ErrorCode;
 import com.hl.hlpicturebackend.exception.ThrowUtils;
-import com.hl.hlpicturebackend.manager.FileManager;
+import com.hl.hlpicturebackend.manager.upload.FilePictureUpload;
+import com.hl.hlpicturebackend.manager.upload.PictureUploadTemplate;
+import com.hl.hlpicturebackend.manager.upload.UrlPictureUpload;
 import com.hl.hlpicturebackend.mapper.PictureMapper;
 import com.hl.hlpicturebackend.model.dto.file.UploadPictureResult;
 import com.hl.hlpicturebackend.model.dto.picture.PictureQueryRequest;
@@ -24,10 +25,8 @@ import com.hl.hlpicturebackend.service.PictureService;
 import com.hl.hlpicturebackend.service.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -43,10 +42,13 @@ import java.util.stream.Collectors;
 public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> implements PictureService {
 
     @Resource
-    private FileManager fileManager;
+    private UserService userService;
 
     @Resource
-    private UserService userService;
+    private FilePictureUpload filePictureUpload;
+
+    @Resource
+    private UrlPictureUpload urlPictureUpload;
 
     @Override
     public void validPicture(Picture picture) {
@@ -67,8 +69,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
 
 
     @Override
-    public PictureVO uploadPicture(MultipartFile multipartFile, PictureUploadRequest pictureUploadRequest,
-                                   User loginUser) {
+    public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest,
+                                       User loginUser) {
         // 校验参数
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
         // 用于判断图片是否新增
@@ -85,8 +87,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
                     ErrorCode.NO_AUTH_ERROR);
         }
         String uploadPathPrefix = String.format("public/%s", loginUser.getId());
+        // 根据inputSource的类型区分上传方式
+        PictureUploadTemplate pictureUploadTemplate = filePictureUpload;
+        if (inputSource instanceof String) {
+            pictureUploadTemplate = urlPictureUpload;
+        }
         // 上传图片
-        UploadPictureResult uploadPictureResult = fileManager.uploadPicture(multipartFile, uploadPathPrefix);
+        UploadPictureResult uploadPictureResult = pictureUploadTemplate.uploadPicture(inputSource, uploadPathPrefix);
         // 构造入库的信息
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());

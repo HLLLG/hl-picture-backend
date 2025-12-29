@@ -7,7 +7,6 @@ import com.hl.hlpicturebackend.common.BaseResponse;
 import com.hl.hlpicturebackend.common.DeleteRequest;
 import com.hl.hlpicturebackend.common.ResultUtils;
 import com.hl.hlpicturebackend.constant.UserConstant;
-import com.hl.hlpicturebackend.exception.BusinessException;
 import com.hl.hlpicturebackend.exception.ErrorCode;
 import com.hl.hlpicturebackend.exception.ThrowUtils;
 import com.hl.hlpicturebackend.model.dto.picture.*;
@@ -20,13 +19,11 @@ import com.hl.hlpicturebackend.service.PictureService;
 import com.hl.hlpicturebackend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -57,6 +54,24 @@ public class PictureController {
         return ResultUtils.success(pictureVO);
 
     }
+
+    /**
+     * 通过 url 上传图片（可重新上传）
+     *
+     * @param uploadPictureRequest
+     * @return
+     */
+    @PostMapping("/upload/url")
+    public BaseResponse<PictureVO> UploadPictureByUrl(@RequestBody PictureUploadRequest uploadPictureRequest,
+                                                 HttpServletRequest request) {
+        ThrowUtils.throwIf(uploadPictureRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        String fileUrl = uploadPictureRequest.getFileUrl();
+        PictureVO pictureVO = pictureService.uploadPicture(fileUrl, uploadPictureRequest, loginUser);
+        return ResultUtils.success(pictureVO);
+
+    }
+
 
     /**
      * 根据id删除图片

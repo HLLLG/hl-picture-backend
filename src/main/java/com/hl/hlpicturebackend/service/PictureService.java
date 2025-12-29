@@ -11,9 +11,7 @@ import com.hl.hlpicturebackend.model.entity.User;
 import com.hl.hlpicturebackend.model.vo.PictureVO;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.util.List;
 
 /**
  * @author 21628
@@ -31,13 +29,13 @@ public interface PictureService extends IService<Picture> {
     /**
      * 上传图片
      *
-     * @param file
+     * @param inputSource 输入源
      * @param pictureUploadRequest
      * @param loginUser
      * @return
      * @throws IOException
      */
-    PictureVO uploadPicture(MultipartFile file, PictureUploadRequest pictureUploadRequest, User loginUser);
+    PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser);
 
     /**
      * 构造查询图片QueryWrapper
