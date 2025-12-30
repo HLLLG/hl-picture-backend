@@ -1,5 +1,6 @@
 package com.hl.hlpicturebackend.controller;
 
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hl.hlpicturebackend.annotation.AuthCheck;
@@ -69,6 +70,23 @@ public class PictureController {
         String fileUrl = uploadPictureRequest.getFileUrl();
         PictureVO pictureVO = pictureService.uploadPicture(fileUrl, uploadPictureRequest, loginUser);
         return ResultUtils.success(pictureVO);
+
+    }
+
+    /**
+     * 批量上传上传图片（仅管理员）
+     *
+     * @param uploadByBatchRequest
+     * @return
+     */
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @PostMapping("/upload/batch")
+    public BaseResponse<Integer> UploadPictureByBatch(@RequestBody PictureUploadByBatchRequest uploadByBatchRequest,
+                                                 HttpServletRequest request) {
+        ThrowUtils.throwIf(ObjectUtil.isNull(uploadByBatchRequest), ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        int uploadCount = pictureService.uploadPictureByBatch(uploadByBatchRequest, loginUser);
+        return ResultUtils.success(uploadCount);
 
     }
 

@@ -18,4 +18,9 @@ public class PictureUploadRequest implements Serializable {
      * 文件url
      */
     private String fileUrl;
+
+    /**
+     * 图片名称
+     */
+    private String name;
 }

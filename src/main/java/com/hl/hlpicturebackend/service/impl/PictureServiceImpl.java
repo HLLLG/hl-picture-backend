@@ -2,10 +2,12 @@ package com.hl.hlpicturebackend.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hl.hlpicturebackend.exception.BusinessException;
 import com.hl.hlpicturebackend.exception.ErrorCode;
 import com.hl.hlpicturebackend.exception.ThrowUtils;
 import com.hl.hlpicturebackend.manager.upload.FilePictureUpload;
@@ -15,6 +17,7 @@ import com.hl.hlpicturebackend.mapper.PictureMapper;
 import com.hl.hlpicturebackend.model.dto.file.UploadPictureResult;
 import com.hl.hlpicturebackend.model.dto.picture.PictureQueryRequest;
 import com.hl.hlpicturebackend.model.dto.picture.PictureReviewRequest;
+import com.hl.hlpicturebackend.model.dto.picture.PictureUploadByBatchRequest;
 import com.hl.hlpicturebackend.model.dto.picture.PictureUploadRequest;
 import com.hl.hlpicturebackend.model.entity.Picture;
 import com.hl.hlpicturebackend.model.entity.User;
@@ -23,10 +26,17 @@ import com.hl.hlpicturebackend.model.vo.PictureVO;
 import com.hl.hlpicturebackend.model.vo.UserVO;
 import com.hl.hlpicturebackend.service.PictureService;
 import com.hl.hlpicturebackend.service.UserService;
+import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.internal.StringUtil;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +49,7 @@ import java.util.stream.Collectors;
  * @createDate 2025-12-21 16:25:52
  */
 @Service
+@Slf4j
 public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> implements PictureService {
 
     @Resource
@@ -70,7 +81,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
 
     @Override
     public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest,
-                                       User loginUser) {
+                                   User loginUser) {
         // 校验参数
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
         // 用于判断图片是否新增
@@ -97,7 +108,11 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         // 构造入库的信息
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());
-        picture.setName(uploadPictureResult.getName());
+        String picName = uploadPictureResult.getName();
+        if (pictureUploadRequest != null && StrUtil.isNotBlank(pictureUploadRequest.getName())) {
+            picName = pictureUploadRequest.getName();
+        }
+        picture.setName(picName);
         picture.setPicSize(uploadPictureResult.getPicSize());
         picture.setPicWidth(uploadPictureResult.getPicWidth());
         picture.setPicHeight(uploadPictureResult.getPicHeight());
@@ -253,6 +268,65 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         }
     }
 
+    @Override
+    public int uploadPictureByBatch(PictureUploadByBatchRequest pictureUploadByBatchRequest, User loginUser) {
+        // 获取参数
+        String searchText = pictureUploadByBatchRequest.getSearchText();
+        // 格式化数量
+        Integer count = pictureUploadByBatchRequest.getCount();
+        ThrowUtils.throwIf(count > 30, ErrorCode.PARAMS_ERROR, "单次批量上传数量不能超过30张");
+        // 拼接图片抓取地址
+        String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&mmasync=1", searchText);
+        Document document = null;
+        try {
+            // 使用jsoup抓取图片地址html列表
+            document = Jsoup.connect(fetchUrl).get();
+        } catch (IOException e) {
+            log.error("图片抓取失败", e);
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "图片抓取失败");
+        }
+        // 解析类名 dgControl
+        Element div = document.getElementsByClass("dgControl").first();
+        ThrowUtils.throwIf(ObjectUtil.isNull(div), ErrorCode.PARAMS_ERROR, "获取元素失败");
+        // 在 div 元素内部查找所有 CSS class 为 ming 的 <img> 标签
+        Elements imgElementList = div.select("img.mimg");
+        int currentCount = 0;
+        // 循环上传图片地址列表
+        for (Element imgElement : imgElementList) {
+            // 获取src属性，得到图片地址列表
+            String imgUrl = imgElement.attr("src");
+            if (StrUtil.isBlank(imgUrl)) {
+                log.info("图片地址为空，跳过:{}", imgUrl);
+            }
+            // 处理图片上传地址，防止出现转义问题
+            int questionMarkIndex = imgUrl.indexOf("?");
+            if (questionMarkIndex > -1) {
+                imgUrl = imgUrl.substring(0, questionMarkIndex);
+            }
+            // 上传图片
+            PictureUploadRequest pictureUploadRequest = new PictureUploadRequest();
+            String namePrefix = pictureUploadByBatchRequest.getNamePrefix();
+            if (StrUtil.isBlank(namePrefix)) {
+                namePrefix = searchText;
+            }
+            try {
+                if (StrUtil.isNotBlank(namePrefix)) {
+                    pictureUploadRequest.setName(namePrefix + (currentCount + 1));
+                }
+                PictureVO pictureVO = this.uploadPicture(imgUrl, pictureUploadRequest, loginUser);
+                log.info("第{}张图片上传成功，id:{}", currentCount + 1, pictureVO.getId());
+                currentCount++;
+            } catch (Exception e) {
+                log.error("上传图片失败", e);
+            }
+            // 达到上传数量，跳出循环
+            if (currentCount >= count) {
+                break;
+            }
+        }
+        // 返回上传成功数量
+        return currentCount;
+    }
 }
 
 
