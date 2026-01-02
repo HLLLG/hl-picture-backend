@@ -3,6 +3,7 @@ package com.hl.hlpicturebackend.model.dto.picture;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Data
 public class PictureUploadRequest implements Serializable {
@@ -23,4 +24,14 @@ public class PictureUploadRequest implements Serializable {
      * 图片名称
      */
     private String name;
+
+    /**
+     * 分类
+     */
+    private String category;
+
+    /**
+     * 标签（JSON 数组）
+     */
+    private List<String> tags;
 }

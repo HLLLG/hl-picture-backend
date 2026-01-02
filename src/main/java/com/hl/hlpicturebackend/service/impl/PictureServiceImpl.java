@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -109,8 +110,18 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());
         String picName = uploadPictureResult.getName();
-        if (pictureUploadRequest != null && StrUtil.isNotBlank(pictureUploadRequest.getName())) {
-            picName = pictureUploadRequest.getName();
+        if (pictureUploadRequest != null) {
+            if (StrUtil.isNotBlank(pictureUploadRequest.getName())) {
+                picName = pictureUploadRequest.getName();
+            }
+            if (StrUtil.isNotBlank(pictureUploadRequest.getCategory())) {
+                picture.setCategory(pictureUploadRequest.getCategory());
+            }
+            if (CollUtil.isNotEmpty(pictureUploadRequest.getTags())) {
+                // 将标签列表转换为 JSON 字符串存储
+               picture.setTags(JSONUtil.toJsonStr(pictureUploadRequest.getTags()));
+            }
+
         }
         picture.setName(picName);
         picture.setPicSize(uploadPictureResult.getPicSize());
@@ -274,9 +285,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         String searchText = pictureUploadByBatchRequest.getSearchText();
         // 格式化数量
         Integer count = pictureUploadByBatchRequest.getCount();
+        // 偏移量
+        Integer offset = pictureUploadByBatchRequest.getOffset();
         ThrowUtils.throwIf(count > 30, ErrorCode.PARAMS_ERROR, "单次批量上传数量不能超过30张");
         // 拼接图片抓取地址
-        String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&mmasync=1", searchText);
+        String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&first=%s&mmasync=1", searchText,
+                offset);
         Document document = null;
         try {
             // 使用jsoup抓取图片地址html列表
@@ -287,10 +301,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         }
         // 解析类名 dgControl
         Element div = document.getElementsByClass("dgControl").first();
-        ThrowUtils.throwIf(ObjectUtil.isNull(div), ErrorCode.PARAMS_ERROR, "获取元素失败");
+        ThrowUtils.throwIf(ObjectUtil.isEmpty(div), ErrorCode.PARAMS_ERROR, "获取元素失败");
         // 在 div 元素内部查找所有 CSS class 为 ming 的 <img> 标签
         Elements imgElementList = div.select("img.mimg");
-        int currentCount = 0;
+        int uploadCount = 0;
         // 循环上传图片地址列表
         for (Element imgElement : imgElementList) {
             // 获取src属性，得到图片地址列表
@@ -305,27 +319,36 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             }
             // 上传图片
             PictureUploadRequest pictureUploadRequest = new PictureUploadRequest();
+            // 设置分类和标签
+            if (StrUtil.isNotBlank(pictureUploadByBatchRequest.getCategory())) {
+                pictureUploadRequest.setCategory(pictureUploadByBatchRequest.getCategory());
+            }
+            if (CollUtil.isNotEmpty(pictureUploadByBatchRequest.getTags())) {
+                pictureUploadRequest.setTags(pictureUploadByBatchRequest.getTags());
+            }
+            // 名称前缀等于搜索关键字
             String namePrefix = pictureUploadByBatchRequest.getNamePrefix();
             if (StrUtil.isBlank(namePrefix)) {
                 namePrefix = searchText;
             }
             try {
                 if (StrUtil.isNotBlank(namePrefix)) {
-                    pictureUploadRequest.setName(namePrefix + (currentCount + 1));
+                    pictureUploadRequest.setName(namePrefix + (uploadCount + 1));
                 }
+                // 上传
                 PictureVO pictureVO = this.uploadPicture(imgUrl, pictureUploadRequest, loginUser);
-                log.info("第{}张图片上传成功，id:{}", currentCount + 1, pictureVO.getId());
-                currentCount++;
+                log.info("第{}张图片上传成功，id:{}", uploadCount + 1, pictureVO.getId());
+                uploadCount++;
             } catch (Exception e) {
                 log.error("上传图片失败", e);
             }
             // 达到上传数量，跳出循环
-            if (currentCount >= count) {
+            if (uploadCount >= count) {
                 break;
             }
         }
         // 返回上传成功数量
-        return currentCount;
+        return uploadCount;
     }
 }
 
