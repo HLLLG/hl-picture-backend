@@ -4,10 +4,9 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
 
 import java.util.Date;
-
-import lombok.Data;
 
 /**
  * 图片
@@ -27,6 +26,11 @@ public class Picture {
      * 图片 url
      */
     private String url;
+
+    /**
+     * 缩略图 url
+     */
+    private String thumbnailUrl;
 
     /**
      * 图片名称

@@ -129,6 +129,8 @@ public class PictureController {
         ThrowUtils.throwIf(!oldPicture.getUserId().equals(loginUser.getId()) && !loginUser.getUserRole().equals(UserConstant.ADMIN_ROLE), ErrorCode.NOT_LOGIN_ERROR);
         // 操作数据库
         boolean result = pictureService.removeById(pictureId);
+        // 清理图片文件
+        pictureService.clearPictureFile(oldPicture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }

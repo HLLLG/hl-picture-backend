@@ -1,36 +1,23 @@
 package com.hl.hlpicturebackend.manager.upload;
 
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.http.HttpResponse;
-import cn.hutool.http.HttpStatus;
-import cn.hutool.http.HttpUtil;
-import cn.hutool.http.Method;
-import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.hl.hlpicturebackend.config.CosClientConfig;
 import com.hl.hlpicturebackend.exception.BusinessException;
 import com.hl.hlpicturebackend.exception.ErrorCode;
-import com.hl.hlpicturebackend.exception.ThrowUtils;
 import com.hl.hlpicturebackend.manager.CosManager;
 import com.hl.hlpicturebackend.model.dto.file.UploadPictureResult;
 import com.qcloud.cos.model.PutObjectResult;
 import com.qcloud.cos.model.ciModel.persistence.CIObject;
 import com.qcloud.cos.model.ciModel.persistence.ImageInfo;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -92,9 +79,15 @@ public abstract class PictureUploadTemplate {
             ImageInfo imageInfo = putObjectResult.getCiUploadResult().getOriginalInfo().getImageInfo();
             List<CIObject> objectList = putObjectResult.getCiUploadResult().getProcessResults().getObjectList();
             if (CollUtil.isNotEmpty(objectList)) {
-                CIObject ciObject = objectList.get(0);
+                // 获取压缩图信息
+                CIObject compressedCiObject = objectList.get(0);
+                // 获取缩略图信息（如果有的话）
+                CIObject thumbnailCiObject = compressedCiObject;
+                if (objectList.size() > 1) {
+                    thumbnailCiObject = objectList.get(1);
+                }
                 // 封装压缩图返回结果
-                return buildResult(originalFilename, ciObject);
+                return buildResult(originalFilename, compressedCiObject, thumbnailCiObject);
             }
             // 获取图片信息并封装返回结果
             return buildResult(imageInfo, originalFilename, file, uploadFilePath);
@@ -107,7 +100,7 @@ public abstract class PictureUploadTemplate {
 
     }
 
-    private UploadPictureResult buildResult(String originalFilename, CIObject ciObject) {
+    private UploadPictureResult buildResult(String originalFilename, CIObject ciObject, CIObject thumbnailCiObject) {
         // 封装返回结果
         String format = ciObject.getFormat();
         int picWidth = ciObject.getWidth();
@@ -122,6 +115,7 @@ public abstract class PictureUploadTemplate {
         uploadPictureResult.setPicScale(picScale);
         uploadPictureResult.setPicFormat(format);
         uploadPictureResult.setUrl(cosClientConfig.getHost() + "/" + ciObject.getKey());
+        uploadPictureResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + thumbnailCiObject.getKey());
 
         // 返回可访问的地址
         return uploadPictureResult;

@@ -23,6 +23,7 @@ public interface PictureService extends IService<Picture> {
 
     /**
      * 校验图片
+     *
      * @param picture
      */
     void validPicture(Picture picture);
@@ -30,13 +31,22 @@ public interface PictureService extends IService<Picture> {
     /**
      * 上传图片
      *
-     * @param inputSource 输入源
+     * @param inputSource          输入源
      * @param pictureUploadRequest
      * @param loginUser
      * @return
      * @throws IOException
      */
     PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser);
+
+    /**
+     * 批量上传图片
+     *
+     * @param pictureUploadByBatchRequest
+     * @param loginUser
+     * @return
+     */
+    int uploadPictureByBatch(PictureUploadByBatchRequest pictureUploadByBatchRequest, User loginUser);
 
     /**
      * 构造查询图片QueryWrapper
@@ -48,6 +58,7 @@ public interface PictureService extends IService<Picture> {
 
     /**
      * 获取图片包装类一条
+     *
      * @param picture
      * @return
      */
@@ -55,6 +66,7 @@ public interface PictureService extends IService<Picture> {
 
     /**
      * 获取图片包装类多条
+     *
      * @param picturePage
      * @return
      */
@@ -71,16 +83,15 @@ public interface PictureService extends IService<Picture> {
 
     /**
      * 填充审核参数
+     *
      * @param picture
      * @param loginUser
      */
     void fillReviewParams(Picture picture, User loginUser);
 
     /**
-     * 批量上传图片
-     * @param pictureUploadByBatchRequest
-     * @param loginUser
-     * @return
+     * 清理图片文件
+     * @param oldPicture
      */
-    int uploadPictureByBatch(PictureUploadByBatchRequest pictureUploadByBatchRequest, User loginUser);
+    void clearPictureFile(Picture oldPicture);
 }
