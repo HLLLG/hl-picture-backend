@@ -112,6 +112,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         Long userId = curentUser.getId();
         curentUser = this.getById(userId);
         ThrowUtils.throwIf(curentUser == null, ErrorCode.NOT_LOGIN_ERROR);
+        // 3 更新用户修改时间
+        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, curentUser);
         return curentUser;
     }
 
