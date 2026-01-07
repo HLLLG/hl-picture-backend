@@ -96,4 +96,14 @@ public class PictureQueryRequest extends PageRequest implements Serializable {
      * 搜索词（同时搜名称、简介等）
      */
     private String searchText;
+
+    /**
+     * 空间 id（为空表示公共空间）
+     */
+    private Long spaceId;
+
+    /**
+     * 是否查询公共空间图片
+     */
+    private Boolean NullSpaceId;
 }

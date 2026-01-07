@@ -30,7 +30,14 @@ public interface SpaceService extends IService<Space> {
      * @param loginUser
      * @return
      */
-    Boolean addSpace(SpaceAddRequest spaceAddRequest, User loginUser);
+    long addSpace(SpaceAddRequest spaceAddRequest, User loginUser);
+
+    /**
+     * 删除空间
+     * @param spaceId
+     * @param loginUser
+     */
+    void deleteSpace(Long spaceId, User loginUser);
 
     /**
      * 获取空间包装类

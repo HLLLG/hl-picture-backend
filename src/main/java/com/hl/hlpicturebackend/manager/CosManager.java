@@ -5,10 +5,7 @@ import com.hl.hlpicturebackend.config.CosClientConfig;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.exception.CosClientException;
 import com.qcloud.cos.exception.CosServiceException;
-import com.qcloud.cos.model.COSObject;
-import com.qcloud.cos.model.GetObjectRequest;
-import com.qcloud.cos.model.PutObjectRequest;
-import com.qcloud.cos.model.PutObjectResult;
+import com.qcloud.cos.model.*;
 import com.qcloud.cos.model.ciModel.persistence.PicOperations;
 import org.springframework.stereotype.Component;
 
@@ -96,5 +93,16 @@ public class CosManager {
      */
     public void deletePictureObject(String key) {
         cosClient.deleteObject(cosClientConfig.getBucket(), key);
+    }
+
+    /**
+     * 批量删除图片对象
+     *
+     * @param key 唯一键
+     */
+    public void deletePictureObjectBatch(List<DeleteObjectsRequest.KeyVersion> key) {
+        DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(cosClientConfig.getBucket());
+        deleteObjectsRequest.setKeys(key);
+        cosClient.deleteObjects(deleteObjectsRequest);
     }
 }
