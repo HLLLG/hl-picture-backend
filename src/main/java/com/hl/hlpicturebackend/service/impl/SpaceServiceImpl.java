@@ -18,12 +18,14 @@ import com.hl.hlpicturebackend.model.vo.SpaceVO;
 import com.hl.hlpicturebackend.model.vo.UserVO;
 import com.hl.hlpicturebackend.service.SpaceService;
 import com.hl.hlpicturebackend.service.UserService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -38,6 +40,9 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private TransactionTemplate transactionTemplate;
 
     @Override
     public void validSpace(Space space, boolean isAdd) {
@@ -62,25 +67,55 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
     }
 
     @Override
-    public Boolean addSpace(SpaceAddRequest spaceAddRequest, User loginUser) {
-        // 校验参数
-        String spaceName = spaceAddRequest.getSpaceName();
-        Integer spaceLevel = spaceAddRequest.getSpaceLevel();
-        // 空间名称不能为空，且长度不能超过20个字符
-        ThrowUtils.throwIf(StrUtil.isBlank(spaceName) || spaceName.length() > 20, ErrorCode.PARAMS_ERROR, "空间名称不能为空且长度不能超过20个字符");
-        // 空间等级不能为空，且必须是0-2之间的整数
-        SpaceLevelEnum levelEnum = SpaceLevelEnum.getEnumByValue(spaceLevel);
-        ThrowUtils.throwIf(ObjUtil.isNull(levelEnum), ErrorCode.PARAMS_ERROR, "空间等级不能为空，且必须是0-2之间的整数");
-        // 创建空间
+    public long addSpace(SpaceAddRequest spaceAddRequest, User loginUser) {
+        // 实体类转VO
         Space space = new Space();
-        space.setSpaceName(spaceName);
-        space.setSpaceLevel(spaceLevel);
-        space.setMaxCount(levelEnum.getMaxCount());
-        space.setMaxSize(levelEnum.getMaxSize());
+        BeanUtils.copyProperties(spaceAddRequest, space);
+        // 默认值
+        if (StrUtil.isBlank(space.getSpaceName())) {
+            space.setSpaceName("默认空间");
+        }
+        if (space.getSpaceLevel() == null) {
+            space.setSpaceLevel(SpaceLevelEnum.COMMON.getValue());
+        }
+        // 填充空间大小
+        this.fillSpaceBySpaceLevel(space);
+        // 校验参数
+        this.validSpace(space, true);
+        // 设置创建用户
         space.setUserId(loginUser.getId());
-        boolean result = this.save(space);
-        ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR, "空间创建失败");
-        return true;
+        // 权限校验，非管理员只能创建普通空间
+        ThrowUtils.throwIf(SpaceLevelEnum.COMMON.getValue() != space.getSpaceLevel()
+                && !userService.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR,
+                "只有管理员才能创建专业版及以上空间");;
+        // 控制同一用户只能创建一个私有空间
+        String lock = String.valueOf(loginUser.getId()).intern();
+        synchronized (lock) {
+            Long executeId = transactionTemplate.execute(status -> {
+                // 判断是否已有空间
+                boolean exists = this.lambdaQuery().eq(Space::getUserId, loginUser.getId()).exists();
+                // 如果有空间，就不能创建
+                ThrowUtils.throwIf(exists, ErrorCode.OPERATION_ERROR, "每个用户只能创建一个空间");
+                // 创建
+                boolean result = this.save(space);
+                ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "空间创建失败");
+                return space.getId();
+            });
+            return Optional.ofNullable(executeId).orElse(-1L);
+        }
+    }
+
+    @Override
+    public void deleteSpace(Long spaceId, User loginUser) {
+        // 判断空间是否存在
+        Space space = this.getById(spaceId);
+        ThrowUtils.throwIf(ObjUtil.isNull(space), ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+        // 仅管理员和空间创建者可删除
+        ThrowUtils.throwIf(!userService.isAdmin(loginUser) && !space.getUserId().equals(loginUser.getId()),
+                ErrorCode.NO_AUTH_ERROR);
+        // 删除空间
+        boolean result = this.removeById(spaceId);
+        ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR, "空间删除失败");
     }
 
     @Override
@@ -148,10 +183,10 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
             Long maxCount = spaceLevelEnum.getMaxCount();
             Long maxSize = spaceLevelEnum.getMaxSize();
             if (space.getMaxSize() == null) {
-                space.setMaxCount(maxSize);
+                space.setMaxSize(maxSize);
             }
             if (space.getMaxCount() == null) {
-                space.setMaxSize(maxCount);
+                space.setMaxCount(maxCount);
             }
         }
     }

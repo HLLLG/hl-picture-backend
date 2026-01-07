@@ -2,17 +2,16 @@ package com.hl.hlpicturebackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.hl.hlpicturebackend.model.dto.picture.PictureQueryRequest;
-import com.hl.hlpicturebackend.model.dto.picture.PictureReviewRequest;
-import com.hl.hlpicturebackend.model.dto.picture.PictureUploadByBatchRequest;
-import com.hl.hlpicturebackend.model.dto.picture.PictureUploadRequest;
+import com.hl.hlpicturebackend.model.dto.picture.*;
 import com.hl.hlpicturebackend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.hl.hlpicturebackend.model.entity.User;
 import com.hl.hlpicturebackend.model.vo.PictureVO;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * @author 21628
@@ -27,6 +26,21 @@ public interface PictureService extends IService<Picture> {
      * @param picture
      */
     void validPicture(Picture picture);
+
+    /**
+     * 删除图片
+     * @param pictureId
+     * @param loginUser
+     * @return
+     */
+    void deletePicture(Long pictureId, User loginUser);
+
+    /**
+     * 编辑图片
+     * @param pictureEditRequest
+     * @param loginUser
+     */
+    void editPicture(PictureEditRequest pictureEditRequest, User loginUser);
 
     /**
      * 上传图片
@@ -93,5 +107,26 @@ public interface PictureService extends IService<Picture> {
      * 清理图片文件
      * @param oldPicture
      */
+    @Async
     void clearPictureFile(Picture oldPicture);
+
+    /**
+     * 批量清理图片文件
+     * @param pictureList
+     */
+    @Async
+    void clearPictureFileBatch(List<Picture> pictureList);
+
+    /**
+     * 校验空间图片的权限
+     * @param picture
+     * @param loginUser
+     */
+    void validPictureAuth(Picture picture, User loginUser);
+
+    /**
+     * 根据空间 id 删除图片
+     * @param spaceId
+     */
+    void removePictureBySpaceId(Long spaceId);
 }

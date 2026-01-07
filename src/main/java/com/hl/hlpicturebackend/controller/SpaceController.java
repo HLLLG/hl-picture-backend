@@ -9,24 +9,23 @@ import com.hl.hlpicturebackend.common.ResultUtils;
 import com.hl.hlpicturebackend.constant.UserConstant;
 import com.hl.hlpicturebackend.exception.ErrorCode;
 import com.hl.hlpicturebackend.exception.ThrowUtils;
-import com.hl.hlpicturebackend.model.dto.space.SpaceAddRequest;
-import com.hl.hlpicturebackend.model.dto.space.SpaceEditRequest;
-import com.hl.hlpicturebackend.model.dto.space.SpaceQueryRequest;
-import com.hl.hlpicturebackend.model.dto.space.SpaceUpdateRequest;
+import com.hl.hlpicturebackend.model.dto.space.*;
 import com.hl.hlpicturebackend.model.entity.Space;
 import com.hl.hlpicturebackend.model.entity.User;
+import com.hl.hlpicturebackend.model.enums.SpaceLevelEnum;
 import com.hl.hlpicturebackend.model.vo.SpaceVO;
+import com.hl.hlpicturebackend.service.PictureService;
 import com.hl.hlpicturebackend.service.SpaceService;
 import com.hl.hlpicturebackend.service.UserService;
 import org.springframework.beans.BeanUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/space")
@@ -38,6 +37,9 @@ public class SpaceController {
     @Resource
     private UserService userService;
 
+    @Resource
+    private PictureService pictureService;
+
     /**
      * 添加空间
      *
@@ -46,7 +48,7 @@ public class SpaceController {
      * @return
      */
     @PostMapping("/add")
-    public BaseResponse<Boolean> addSpace(@RequestBody SpaceAddRequest spaceAddRequest, HttpServletRequest request) {
+    public BaseResponse<Long> addSpace(@RequestBody SpaceAddRequest spaceAddRequest, HttpServletRequest request) {
         // 校验请求参数
         ThrowUtils.throwIf(ObjUtil.isNull(spaceAddRequest), ErrorCode.PARAMS_ERROR);
         // 获取登录用户
@@ -64,19 +66,14 @@ public class SpaceController {
     @PostMapping("/delete")
     public BaseResponse<Boolean> deleteSpace(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         // 校验请求参数
-        ThrowUtils.throwIf(ObjUtil.isNull(deleteRequest) || deleteRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(deleteRequest == null || deleteRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
         Long spaceId = deleteRequest.getId();
         // 获取登录用户
         User loginUser = userService.getLoginUser(request);
-        // 判断空间是否存在
-        Space space = spaceService.getById(spaceId);
-        ThrowUtils.throwIf(ObjUtil.isNull(space), ErrorCode.NOT_FOUND_ERROR, "空间不存在");
-        // 仅管理员和空间创建者可删除
-        ThrowUtils.throwIf(!userService.isAdmin(loginUser) && !space.getUserId().equals(loginUser.getId()),
-                ErrorCode.NO_AUTH_ERROR);
         // 删除空间
-        boolean result = spaceService.removeById(spaceId);
-        ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR, "空间删除失败");
+        spaceService.deleteSpace(spaceId, loginUser);
+        // 删除空间关联的图片
+        pictureService.removePictureBySpaceId(spaceId);
         return ResultUtils.success(true);
     }
 
@@ -213,9 +210,23 @@ public class SpaceController {
         int current = spaceQueryRequest.getCurrent();
         int pageSize = spaceQueryRequest.getPageSize();
         // 构造分页查询
-        Page<Space> spacePage = new Page<>(current, pageSize);
-        // 查询
-        Page<Space> SpacePage = spaceService.page(spacePage, spaceService.getSpaceQueryWrapper(spaceQueryRequest));
-        return ResultUtils.success(SpacePage);
+        Page<Space> spacePage = spaceService.page(new Page<>(current, pageSize),
+                spaceService.getSpaceQueryWrapper(spaceQueryRequest));
+        return ResultUtils.success(spacePage);
+    }
+
+    /**
+     * 获取空间等级列表
+     * @return
+     */
+    @GetMapping("/list/level")
+    public BaseResponse<List<SpaceLevel>> getSpaceLevels() {
+        List<SpaceLevel> spaceLevelList = Arrays.stream(SpaceLevelEnum.values())
+                .map(spaceLevelEnum -> new SpaceLevel(spaceLevelEnum.getValue(),
+                        spaceLevelEnum.getText(),
+                        spaceLevelEnum.getMaxCount(),
+                        spaceLevelEnum.getMaxSize()))
+                .collect(Collectors.toList());
+        return ResultUtils.success(spaceLevelList);
     }
 }

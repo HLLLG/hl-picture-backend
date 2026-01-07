@@ -34,4 +34,9 @@ public class PictureUploadRequest implements Serializable {
      * 标签（JSON 数组）
      */
     private List<String> tags;
+
+    /**
+     * 空间 id（为空表示公共空间）
+     */
+    private Long spaceId;
 }
