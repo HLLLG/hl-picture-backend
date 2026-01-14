@@ -106,4 +106,20 @@ public class PictureQueryRequest extends PageRequest implements Serializable {
      * 是否查询公共空间图片
      */
     private Boolean NullSpaceId;
+
+    /**
+     * 编辑开始时间
+     */
+    private Date startEditTime;
+
+    /**
+     * 编辑结束时间
+     */
+    private Date endEditTime;
+
+    /**
+     * 图片尺寸
+     */
+    private Integer imgSize;
+
 }

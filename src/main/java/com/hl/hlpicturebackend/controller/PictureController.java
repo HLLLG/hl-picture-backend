@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.hl.hlpicturebackend.annotation.AuthCheck;
+import com.hl.hlpicturebackend.api.imagesearch.ImageSearchFacade;
+import com.hl.hlpicturebackend.api.imagesearch.model.ImageSearchResult;
 import com.hl.hlpicturebackend.common.BaseResponse;
 import com.hl.hlpicturebackend.common.DeleteRequest;
 import com.hl.hlpicturebackend.common.ResultUtils;
@@ -330,4 +332,18 @@ public class PictureController {
         return ResultUtils.success(true);
     }
 
+    /**
+     * 以图搜图
+     * @param searchPictureByPictureRequest
+     * @return
+     */
+    @PostMapping("/search/picture")
+    public BaseResponse<List<ImageSearchResult>> searchImages(@RequestBody SearchPictureByPictureRequest searchPictureByPictureRequest) {
+        ThrowUtils.throwIf(searchPictureByPictureRequest == null, ErrorCode.PARAMS_ERROR);
+        Long pictureId = searchPictureByPictureRequest.getPictureId();
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        Picture picture = pictureService.getById(pictureId);
+        ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
+        return ResultUtils.success(ImageSearchFacade.searchImages(picture.getUrl()));
+    }
 }

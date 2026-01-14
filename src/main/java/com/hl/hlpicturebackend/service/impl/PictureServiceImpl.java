@@ -21,6 +21,7 @@ import com.hl.hlpicturebackend.model.dto.picture.*;
 import com.hl.hlpicturebackend.model.entity.Picture;
 import com.hl.hlpicturebackend.model.entity.Space;
 import com.hl.hlpicturebackend.model.entity.User;
+import com.hl.hlpicturebackend.model.enums.ImgSizeEnum;
 import com.hl.hlpicturebackend.model.enums.PictureReviewStatusEnum;
 import com.hl.hlpicturebackend.model.vo.PictureVO;
 import com.hl.hlpicturebackend.model.vo.UserVO;
@@ -352,6 +353,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         Integer reviewStatus = pictureQueryRequest.getReviewStatus();
         String reviewMessage = pictureQueryRequest.getReviewMessage();
         Long reviewerId = pictureQueryRequest.getReviewerId();
+        Date startEditTime = pictureQueryRequest.getStartEditTime();
+        Date endEditTime = pictureQueryRequest.getEndEditTime();
+        Integer imgSize = pictureQueryRequest.getImgSize();
         String sortField = pictureQueryRequest.getSortField();
         String sortOrder = pictureQueryRequest.getSortOrder();
         // 从多字段中搜索
@@ -374,6 +378,19 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         queryWrapper.eq(ObjUtil.isNotEmpty(reviewStatus), "reviewStatus", reviewStatus);
         queryWrapper.like(StrUtil.isNotBlank(reviewMessage), "reviewMessage", reviewMessage);
         queryWrapper.eq(ObjUtil.isNotEmpty(reviewerId), "reviewerId", reviewerId);
+        // >= startEditTime
+        queryWrapper.ge(ObjUtil.isNotEmpty(startEditTime), "editTime", startEditTime);
+        // < endEditTime
+        queryWrapper.lt(ObjUtil.isNotEmpty(endEditTime), "editTime", endEditTime);
+        // 图片大小枚举
+        if (ObjUtil.isNotEmpty(imgSize)) {
+            // 获取图片大小枚举
+            ImgSizeEnum imgSizeEnum = ImgSizeEnum.getEnumByValue(imgSize);
+            if (imgSizeEnum != null) {
+                queryWrapper.ge("picWidth * picHeight", imgSizeEnum.getMinPixels());
+                queryWrapper.lt("picWidth * picHeight", imgSizeEnum.getMaxPixels());
+            }
+        }
         // JSON 数组查询
         if (CollUtil.isNotEmpty(tags)) {
             for (String tag : tags) {
