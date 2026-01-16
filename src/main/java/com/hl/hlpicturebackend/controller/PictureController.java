@@ -56,11 +56,9 @@ public class PictureController {
     /**
      * 本地缓存
      */
-    private final Cache<String, String> LOCAL_CACHE = Caffeine.newBuilder()
-            .initialCapacity(1024) // 初始缓存数量
+    private final Cache<String, String> LOCAL_CACHE = Caffeine.newBuilder().initialCapacity(1024) // 初始缓存数量
             .maximumSize(10_000L) // 最大缓存数量
-            .expireAfterWrite(Duration.ofMinutes(5))
-            .build();
+            .expireAfterWrite(Duration.ofMinutes(5)).build();
 
     /**
      * 上传图片（可重新上传）
@@ -69,7 +67,7 @@ public class PictureController {
      * @return
      */
     @PostMapping("/upload")
-    public BaseResponse<PictureVO> UploadPicture(@RequestParam("file") MultipartFile multipartFile,
+    public BaseResponse<PictureVO> uploadPicture(@RequestParam("file") MultipartFile multipartFile,
                                                  PictureUploadRequest uploadPictureRequest,
                                                  HttpServletRequest request) {
         ThrowUtils.throwIf(multipartFile == null || uploadPictureRequest == null, ErrorCode.PARAMS_ERROR);
@@ -86,8 +84,8 @@ public class PictureController {
      * @return
      */
     @PostMapping("/upload/url")
-    public BaseResponse<PictureVO> UploadPictureByUrl(@RequestBody PictureUploadRequest uploadPictureRequest,
-                                                 HttpServletRequest request) {
+    public BaseResponse<PictureVO> uploadPictureByUrl(@RequestBody PictureUploadRequest uploadPictureRequest,
+                                                      HttpServletRequest request) {
         ThrowUtils.throwIf(uploadPictureRequest == null, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
         String fileUrl = uploadPictureRequest.getFileUrl();
@@ -104,8 +102,8 @@ public class PictureController {
      */
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     @PostMapping("/upload/batch")
-    public BaseResponse<Integer> UploadPictureByBatch(@RequestBody PictureUploadByBatchRequest uploadByBatchRequest,
-                                                 HttpServletRequest request) {
+    public BaseResponse<Integer> uploadPictureByBatch(@RequestBody PictureUploadByBatchRequest uploadByBatchRequest,
+                                                      HttpServletRequest request) {
         ThrowUtils.throwIf(ObjectUtil.isNull(uploadByBatchRequest), ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
         int uploadCount = pictureService.uploadPictureByBatch(uploadByBatchRequest, loginUser);
@@ -210,7 +208,7 @@ public class PictureController {
      */
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     @PostMapping("/list/page")
-    public BaseResponse<Page<Picture>> ListPictureByPage(@RequestBody PictureQueryRequest pictureQueryRequest) {
+    public BaseResponse<Page<Picture>> listPictureByPage(@RequestBody PictureQueryRequest pictureQueryRequest) {
         ThrowUtils.throwIf(pictureQueryRequest == null, ErrorCode.PARAMS_ERROR);
         int current = pictureQueryRequest.getCurrent();
         int pageSize = pictureQueryRequest.getPageSize();
@@ -226,7 +224,7 @@ public class PictureController {
      * @return
      */
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<PictureVO>> ListPictureVOByPage(@RequestBody PictureQueryRequest pictureQueryRequest,
+    public BaseResponse<Page<PictureVO>> listPictureVOByPage(@RequestBody PictureQueryRequest pictureQueryRequest,
                                                              HttpServletRequest request) {
         ThrowUtils.throwIf(pictureQueryRequest == null, ErrorCode.PARAMS_ERROR);
         int current = pictureQueryRequest.getCurrent();
@@ -263,7 +261,7 @@ public class PictureController {
      */
     @Deprecated
     @PostMapping("/list/page/vo/batch")
-    public BaseResponse<Page<PictureVO>> ListPictureVOByPageWithBatch(@RequestBody PictureQueryRequest pictureQueryRequest) {
+    public BaseResponse<Page<PictureVO>> listPictureVOByPageWithBatch(@RequestBody PictureQueryRequest pictureQueryRequest) {
         ThrowUtils.throwIf(pictureQueryRequest == null, ErrorCode.PARAMS_ERROR);
         int current = pictureQueryRequest.getCurrent();
         int pageSize = pictureQueryRequest.getPageSize();
@@ -319,13 +317,15 @@ public class PictureController {
 
     /**
      * 审核图片
+     *
      * @param pictureReviewRequest
      * @param request
      * @return
      */
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    @PostMapping
-    public BaseResponse<Boolean> doPictureReview(@RequestBody PictureReviewRequest pictureReviewRequest, HttpServletRequest request) {
+    @PostMapping("/review")
+    public BaseResponse<Boolean> doPictureReview(@RequestBody PictureReviewRequest pictureReviewRequest,
+                                                 HttpServletRequest request) {
         ThrowUtils.throwIf(pictureReviewRequest == null || pictureReviewRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
         pictureService.doPictureReview(pictureReviewRequest, loginUser);
@@ -334,16 +334,32 @@ public class PictureController {
 
     /**
      * 以图搜图
+     *
      * @param searchPictureByPictureRequest
      * @return
      */
     @PostMapping("/search/picture")
-    public BaseResponse<List<ImageSearchResult>> searchImages(@RequestBody SearchPictureByPictureRequest searchPictureByPictureRequest) {
+    public BaseResponse<List<ImageSearchResult>> searchPictureByPicture(@RequestBody SearchPictureByPictureRequest searchPictureByPictureRequest) {
         ThrowUtils.throwIf(searchPictureByPictureRequest == null, ErrorCode.PARAMS_ERROR);
         Long pictureId = searchPictureByPictureRequest.getPictureId();
         ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
         Picture picture = pictureService.getById(pictureId);
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
         return ResultUtils.success(ImageSearchFacade.searchImages(picture.getUrl()));
+    }
+
+    /**
+     * 按照颜色搜图
+     *
+     * @param searchPictureByColorRequest
+     * @return
+     */
+    @PostMapping("/search/color")
+    public BaseResponse<List<PictureVO>> searchPictureByColor(@RequestBody SearchPictureByColorRequest searchPictureByColorRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(searchPictureByColorRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        Long spaceId = searchPictureByColorRequest.getSpaceId();
+        String picColor = searchPictureByColorRequest.getPicColor();
+        return ResultUtils.success(pictureService.searchPictureByColor(spaceId, picColor, loginUser));
     }
 }

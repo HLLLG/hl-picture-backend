@@ -28,6 +28,8 @@ import com.hl.hlpicturebackend.model.vo.UserVO;
 import com.hl.hlpicturebackend.service.PictureService;
 import com.hl.hlpicturebackend.service.SpaceService;
 import com.hl.hlpicturebackend.service.UserService;
+import com.hl.hlpicturebackend.utils.ColorSimilarUtils;
+import com.hl.hlpicturebackend.utils.ColorTransformUtils;
 import com.qcloud.cos.model.DeleteObjectsRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -40,11 +42,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
+import java.awt.*;
 import java.io.IOException;
-import java.util.Date;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -105,11 +106,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             boolean result = this.removeById(pictureId);
             ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片删除失败");
             // 更新空间使用额度
-            boolean update = spaceService.lambdaUpdate()
-                    .eq(Space::getId, finalSpaceId)
-                    .setSql("totalSize = totalSize + " + oldPicture.getPicSize())
-                    .setSql("totalCount = totalCount - 1")
-                    .update();
+            boolean update = spaceService.lambdaUpdate().eq(Space::getId, finalSpaceId).setSql("totalSize = totalSize" +
+                    " + " + oldPicture.getPicSize()).setSql("totalCount = totalCount - 1").update();
             ThrowUtils.throwIf(!update, ErrorCode.OPERATION_ERROR, "空间额度更新失败");
             return true;
         });
@@ -141,8 +139,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
     }
 
     @Override
-    public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest,
-                                   User loginUser) {
+    public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
         // 判断图片是否新增
         Long pictureId = null;
         Long spaceId = null;
@@ -159,7 +156,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             ThrowUtils.throwIf(!loginUser.getId().equals(space.getUserId()), ErrorCode.NO_AUTH_ERROR, "无权限上传到该空间");
             // 校验额度
             ThrowUtils.throwIf(space.getTotalSize() >= space.getMaxSize(), ErrorCode.OPERATION_ERROR, "空间存储已满，无法上传图片");
-            ThrowUtils.throwIf(space.getTotalCount() >= space.getMaxCount(), ErrorCode.OPERATION_ERROR, "空间图片数量已达上限，无法上传图片");
+            ThrowUtils.throwIf(space.getTotalCount() >= space.getMaxCount(), ErrorCode.OPERATION_ERROR,
+                    "空间图片数量已达上限，无法上传图片");
         }
         // 如果是更新，需要校验图片是否存在
         Picture oldPicture = null;
@@ -177,8 +175,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
                 }
             } else {
                 // 如果传了空间id，则空间id必须和旧图片一致
-                ThrowUtils.throwIf(!spaceId.equals(oldPicture.getSpaceId()), ErrorCode.PARAMS_ERROR,
-                        "空间id不一致，无法修改");
+                ThrowUtils.throwIf(!spaceId.equals(oldPicture.getSpaceId()), ErrorCode.PARAMS_ERROR, "空间id不一致，无法修改");
             }
 
         }
@@ -218,6 +215,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
 
         }
         picture.setName(picName);
+        picture.setPicColor(ColorTransformUtils.getStandardColor(uploadPictureResult.getPicColor()));
         picture.setPicSize(uploadPictureResult.getPicSize());
         picture.setPicWidth(uploadPictureResult.getPicWidth());
         picture.setPicHeight(uploadPictureResult.getPicHeight());
@@ -243,13 +241,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片保存到数据库失败");
             // 仅当空间id不为空时，才更新空间使用额度
             if (finalSpaceId != null) {
-                boolean update = spaceService.lambdaUpdate()
-                        .eq(Space::getId, finalSpaceId)
-                        .setSql("totalSize = totalSize + " + picture.getPicSize() +
-                                (finalOldPicture == null ? "" : " - " + finalOldPicture.getPicSize()))
-                        .setSql("totalCount = totalCount + 1" +
-                                (finalOldPicture == null ? "" : " - 1"))
-                        .update();
+                boolean update = spaceService.lambdaUpdate().eq(Space::getId, finalSpaceId).setSql("totalSize = " +
+                        "totalSize + " + picture.getPicSize() + (finalOldPicture == null ? "" :
+                        " - " + finalOldPicture.getPicSize())).setSql("totalCount = totalCount + 1" + (finalOldPicture == null ? "" : " - 1")).update();
                 ThrowUtils.throwIf(!update, ErrorCode.OPERATION_ERROR, "空间额度更新失败");
             }
             return picture;
@@ -267,8 +261,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         Integer offset = pictureUploadByBatchRequest.getOffset();
         ThrowUtils.throwIf(count > 30, ErrorCode.PARAMS_ERROR, "单次批量上传数量不能超过30张");
         // 拼接图片抓取地址
-        String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&first=%s&mmasync=1", searchText,
-                offset);
+        String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&first=%s&mmasync=1", searchText, offset);
         Document document = null;
         try {
             // 使用jsoup抓取图片地址html列表
@@ -489,9 +482,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
     @Override
     public void clearPictureFile(Picture oldPicture) {
         String url = oldPicture.getUrl();
-        Long count = this.lambdaQuery()
-                .eq(Picture::getUrl, url)
-                .count();
+        Long count = this.lambdaQuery().eq(Picture::getUrl, url).count();
         // 仅当没有其他图片使用该url时，才删除文件
         if (count > 1) {
             return;
@@ -510,22 +501,15 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
     public void clearPictureFileBatch(List<Picture> pictureList) {
         // 删除图片文件
         List<DeleteObjectsRequest.KeyVersion> urlList =
-                pictureList.stream()
-                        .map(picture -> new DeleteObjectsRequest.KeyVersion(picture.getUrl()))
-                        .filter(pictureUrl -> {
-                            Long count = this.lambdaQuery()
-                                    .eq(Picture::getUrl, pictureUrl.getKey())
-                                    .count();
-                            // 仅当没有其他图片使用该url时，才删除文件
-                            return count <= 1;
-                        })
-                        .collect(Collectors.toList());
+                pictureList.stream().map(picture -> new DeleteObjectsRequest.KeyVersion(picture.getUrl())).filter(pictureUrl -> {
+            Long count = this.lambdaQuery().eq(Picture::getUrl, pictureUrl.getKey()).count();
+            // 仅当没有其他图片使用该url时，才删除文件
+            return count <= 1;
+        }).collect(Collectors.toList());
         cosManager.deletePictureObjectBatch(urlList);
         // 删除缩略图文件
-        List<DeleteObjectsRequest.KeyVersion> thumbnailUrlList = pictureList.stream()
-                .map(picture -> new DeleteObjectsRequest.KeyVersion(picture.getThumbnailUrl()))
-                .filter(ObjUtil::isNotEmpty)
-                .collect(Collectors.toList());
+        List<DeleteObjectsRequest.KeyVersion> thumbnailUrlList =
+                pictureList.stream().map(picture -> new DeleteObjectsRequest.KeyVersion(picture.getThumbnailUrl())).filter(ObjUtil::isNotEmpty).collect(Collectors.toList());
         if (CollUtil.isNotEmpty(thumbnailUrlList)) {
             cosManager.deletePictureObjectBatch(thumbnailUrlList);
         }
@@ -558,6 +542,48 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             this.clearPictureFileBatch(pictureList);
             return true;
         });
+    }
+
+    @Override
+    public List<PictureVO> searchPictureByColor(Long spaceId, String picColor, User loginUser) {
+        // 参数校验
+        ThrowUtils.throwIf(spaceId == null || StrUtil.isBlank(picColor), ErrorCode.PARAMS_ERROR);
+        // 校验空间是否存在
+        Space space = spaceService.getById(spaceId);
+        ThrowUtils.throwIf(space == null, ErrorCode.PARAMS_ERROR, "空间不存在");
+        // 校验权限，只有空间创建者能进行颜色搜索
+        ThrowUtils.throwIf(!space.getUserId().equals(loginUser.getId()), ErrorCode.NO_AUTH_ERROR, "无权限进行颜色搜索");
+        // 获取空间的图片列表，必须要有主色调
+        List<Picture> pictureList = this.lambdaQuery()
+                .eq(Picture::getSpaceId, spaceId)
+                .isNotNull(Picture::getPicColor)
+                .list();
+        // 如果图片列表为空，直接返回
+        if (CollUtil.isEmpty(pictureList)) {
+            return new ArrayList<>();
+        }
+        // 将颜色字符串转为主色调
+        Color targetColor = Color.decode(picColor);
+        // 根据相似度排序
+        return pictureList.stream()
+                .sorted(Comparator.comparingDouble(picture -> {
+                    String hexColor = getPicColor(picture);
+                    // 颜色为空，视为最不相似
+                    if (StrUtil.isBlank(hexColor)) {
+                        return Double.MAX_VALUE;
+                    }
+                    Color pictureColor = Color.decode(hexColor);
+                    // 计算相似度
+                    // 相似度越大，值越小
+                    return -ColorSimilarUtils.calculateSimilarity(targetColor, pictureColor);
+                }))
+                .limit(12) // 取前12个相似的图片
+                .map(PictureVO::objToVO)
+                .collect(Collectors.toList());
+    }
+
+    private static String getPicColor(Picture picture) {
+        return picture.getPicColor();
     }
 
 }
