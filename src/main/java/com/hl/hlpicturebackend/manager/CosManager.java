@@ -49,6 +49,19 @@ public class CosManager {
     }
 
     /**
+     * 获取图片信息
+     *
+     * @param key 唯一键
+     * @return
+     */
+    public COSObject getPictureObject(String key) {
+        GetObjectRequest getObjectRequest = new GetObjectRequest(cosClientConfig.getBucket(), key);
+        String rule = "imageAve";
+        getObjectRequest.putCustomQueryParameter(rule, null);
+        return cosClient.getObject(getObjectRequest);
+    }
+
+    /**
      * 上传并解析图片
      *
      * @param key  唯一键

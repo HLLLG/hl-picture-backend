@@ -29,7 +29,6 @@ import com.hl.hlpicturebackend.service.PictureService;
 import com.hl.hlpicturebackend.service.SpaceService;
 import com.hl.hlpicturebackend.service.UserService;
 import com.hl.hlpicturebackend.utils.ColorSimilarUtils;
-import com.hl.hlpicturebackend.utils.ColorTransformUtils;
 import com.qcloud.cos.model.DeleteObjectsRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -106,8 +105,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             boolean result = this.removeById(pictureId);
             ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片删除失败");
             // 更新空间使用额度
-            boolean update = spaceService.lambdaUpdate().eq(Space::getId, finalSpaceId).setSql("totalSize = totalSize" +
-                    " + " + oldPicture.getPicSize()).setSql("totalCount = totalCount - 1").update();
+            boolean update = spaceService.lambdaUpdate().eq(Space::getId, finalSpaceId).setSql("totalSize = " +
+                    "totalSize" + " + " + oldPicture.getPicSize()).setSql("totalCount = totalCount - 1").update();
             ThrowUtils.throwIf(!update, ErrorCode.OPERATION_ERROR, "空间额度更新失败");
             return true;
         });
@@ -215,7 +214,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
 
         }
         picture.setName(picName);
-        picture.setPicColor(ColorTransformUtils.getStandardColor(uploadPictureResult.getPicColor()));
+        picture.setPicColor(uploadPictureResult.getPicColor());
         picture.setPicSize(uploadPictureResult.getPicSize());
         picture.setPicWidth(uploadPictureResult.getPicWidth());
         picture.setPicHeight(uploadPictureResult.getPicHeight());
@@ -547,44 +546,64 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
     @Override
     public List<PictureVO> searchPictureByColor(Long spaceId, String picColor, User loginUser) {
         // 参数校验
-        ThrowUtils.throwIf(spaceId == null || StrUtil.isBlank(picColor), ErrorCode.PARAMS_ERROR);
-        // 校验空间是否存在
-        Space space = spaceService.getById(spaceId);
-        ThrowUtils.throwIf(space == null, ErrorCode.PARAMS_ERROR, "空间不存在");
-        // 校验权限，只有空间创建者能进行颜色搜索
-        ThrowUtils.throwIf(!space.getUserId().equals(loginUser.getId()), ErrorCode.NO_AUTH_ERROR, "无权限进行颜色搜索");
+        ThrowUtils.throwIf(StrUtil.isBlank(picColor), ErrorCode.PARAMS_ERROR);
+        // 若查询的是个人空间，校验空间是否存在
+        Space space = null;
+        if (spaceId != null) {
+            space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(space == null, ErrorCode.PARAMS_ERROR, "空间不存在");
+            // 校验权限，只有空间创建者能进行颜色搜索
+            ThrowUtils.throwIf(!space.getUserId().equals(loginUser.getId()), ErrorCode.NO_AUTH_ERROR, "无权限进行颜色搜索");
+        }
         // 获取空间的图片列表，必须要有主色调
-        List<Picture> pictureList = this.lambdaQuery()
-                .eq(Picture::getSpaceId, spaceId)
-                .isNotNull(Picture::getPicColor)
-                .list();
+        List<Picture> pictureList = new ArrayList<>();
+        if (space != null) {
+            // 私有空间
+            pictureList = this.lambdaQuery().eq(Picture::getSpaceId, spaceId).isNotNull(Picture::getPicColor).list();
+        } else {
+            // 公共空间
+            pictureList = this.lambdaQuery().isNull(Picture::getSpaceId).isNotNull(Picture::getPicColor).list();
+        }
         // 如果图片列表为空，直接返回
         if (CollUtil.isEmpty(pictureList)) {
             return new ArrayList<>();
         }
+        List<Picture> sortedPictureList = sortPictureByColor(picColor, pictureList);
+        return sortedPictureList.stream().map(PictureVO::objToVO).collect(Collectors.toList());
+    }
+
+
+    @Override
+    public void validPicturePageSortByColor(Page<Picture> picturePage, String picColor) {
+        List<Picture> pictureList = picturePage.getRecords();
+        // 若颜色存在，按颜色排序
+        if (StrUtil.isNotBlank(picColor)) {
+            pictureList = this.sortPictureByColor(picColor, pictureList);
+        }
+        picturePage.setRecords(pictureList);
+    }
+
+    @Override
+    public List<Picture> sortPictureByColor(String picColor, List<Picture> pictureList) {
         // 将颜色字符串转为主色调
         Color targetColor = Color.decode(picColor);
         // 根据相似度排序
-        return pictureList.stream()
-                .sorted(Comparator.comparingDouble(picture -> {
-                    String hexColor = getPicColor(picture);
-                    // 颜色为空，视为最不相似
-                    if (StrUtil.isBlank(hexColor)) {
-                        return Double.MAX_VALUE;
+        double minSimilarity = 0.80; // 相似度阈值：>= 0.80 才保留
+
+        return pictureList.stream().map(picture -> {
+                    String hexColor = picture.getPicColor();
+                    try {
+                        Color pictureColor = Color.decode(hexColor);
+                        double similarity = ColorSimilarUtils.calculateSimilarity(targetColor, pictureColor);
+                        return new AbstractMap.SimpleEntry<>(picture, similarity);
+                    } catch (Exception e) {
+                        return null; // 非法颜色值（如格式不对）直接过滤
                     }
-                    Color pictureColor = Color.decode(hexColor);
-                    // 计算相似度
-                    // 相似度越大，值越小
-                    return -ColorSimilarUtils.calculateSimilarity(targetColor, pictureColor);
-                }))
-                .limit(12) // 取前12个相似的图片
-                .map(PictureVO::objToVO)
-                .collect(Collectors.toList());
+                }).filter(Objects::nonNull).filter(entry -> entry.getValue() >= minSimilarity) // 阈值过滤
+                .sorted(Map.Entry.<Picture, Double>comparingByValue().reversed()) // 相似度高的在前
+                .map(AbstractMap.SimpleEntry::getKey).collect(Collectors.toList());
     }
 
-    private static String getPicColor(Picture picture) {
-        return picture.getPicColor();
-    }
 
 }
 

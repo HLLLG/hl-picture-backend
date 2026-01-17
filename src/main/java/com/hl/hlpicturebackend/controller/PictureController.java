@@ -214,6 +214,9 @@ public class PictureController {
         int pageSize = pictureQueryRequest.getPageSize();
         Page<Picture> picturePage = pictureService.page(new Page<>(current, pageSize),
                 pictureService.getPictureQueryWrapper(pictureQueryRequest));
+        List<Picture> pictureList = picturePage.getRecords();
+        // 判断是否按颜色排序
+        pictureService.validPicturePageSortByColor(picturePage, pictureQueryRequest.getPicColor());
         return ResultUtils.success(picturePage);
     }
 
@@ -249,6 +252,9 @@ public class PictureController {
         // 查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, pageSize),
                 pictureService.getPictureQueryWrapper(pictureQueryRequest));
+
+        // 判断是否按颜色排序
+        pictureService.validPicturePageSortByColor(picturePage, pictureQueryRequest.getPicColor());
         // 获取封装类
         return ResultUtils.success(pictureService.getPictureVOPage(picturePage));
     }

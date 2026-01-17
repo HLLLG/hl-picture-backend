@@ -122,4 +122,9 @@ public class PictureQueryRequest extends PageRequest implements Serializable {
      */
     private Integer imgSize;
 
+    /**
+     * 主色调
+     */
+    private String picColor;
+
 }

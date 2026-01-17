@@ -138,4 +138,18 @@ public interface PictureService extends IService<Picture> {
      * @return
      */
     List<PictureVO> searchPictureByColor(Long spaceId, String picColor, User loginUser);
+
+    /**
+     * 根据颜色获取图片分页
+     * @param pictureList
+     * @param picColor
+     */
+    void validPicturePageSortByColor(Page<Picture> pictureList, String picColor);
+
+    /**
+     * 根据颜色值排序图片
+     * @param picColor
+     * @param pictureList
+     */
+    List<Picture> sortPictureByColor(String picColor, List<Picture> pictureList);
 }
