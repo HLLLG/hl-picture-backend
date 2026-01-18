@@ -152,4 +152,12 @@ public interface PictureService extends IService<Picture> {
      * @param pictureList
      */
     List<Picture> sortPictureByColor(String picColor, List<Picture> pictureList);
+
+    /**
+     * 图片批量编辑
+     *
+     * @param pictureEditByBatchRequest
+     * @param loginUser
+     */
+    void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser);
 }

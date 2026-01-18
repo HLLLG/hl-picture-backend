@@ -368,4 +368,35 @@ public class PictureController {
         String picColor = searchPictureByColorRequest.getPicColor();
         return ResultUtils.success(pictureService.searchPictureByColor(spaceId, picColor, loginUser));
     }
+
+    /**
+     * 图片批量编辑
+     *
+     * @param pictureEditByBatchRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/edit/batch")
+    public BaseResponse<Boolean> editPictureByBatch(@RequestBody PictureEditByBatchRequest pictureEditByBatchRequest,
+                                                    HttpServletRequest request) {
+        ThrowUtils.throwIf(pictureEditByBatchRequest == null, ErrorCode.PARAMS_ERROR);
+        // 获取登录用户
+        User loginUser = userService.getLoginUser(request);
+        // 获取空间id
+        Long spaceId = pictureEditByBatchRequest.getSpaceId();
+        if (spaceId == null) {
+            // 若空间id为空，表示编辑公共空间图片，只有管理员可以操作
+            ThrowUtils.throwIf(!loginUser.getUserRole().equals(UserConstant.ADMIN_ROLE), ErrorCode.NO_AUTH_ERROR, "无权限操作公共空间图片");
+            pictureEditByBatchRequest.setNullSpaceId(true);
+        } else {
+            // 校验空间权限
+            Space space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(space == null, ErrorCode.PARAMS_ERROR, "空间不存在");
+            // 仅空间创建者能操作
+            ThrowUtils.throwIf(!loginUser.getId().equals(space.getUserId()), ErrorCode.NO_AUTH_ERROR, "无权限操作该空间");
+            pictureEditByBatchRequest.setNullSpaceId(false);
+        }
+        pictureService.editPictureByBatch(pictureEditByBatchRequest, loginUser);
+        return ResultUtils.success(true);
+    }
 }
