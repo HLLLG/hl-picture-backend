@@ -8,6 +8,9 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hl.hlpicturebackend.api.aliyunai.AliYunAiApi;
+import com.hl.hlpicturebackend.api.aliyunai.model.CreateOutPaintingTaskRequest;
+import com.hl.hlpicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
 import com.hl.hlpicturebackend.exception.BusinessException;
 import com.hl.hlpicturebackend.exception.ErrorCode;
 import com.hl.hlpicturebackend.exception.ThrowUtils;
@@ -73,6 +76,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
 
     @Resource
     private TransactionTemplate transactionTemplate;
+
+    @Resource
+    private AliYunAiApi aliYunAiApi;
 
     @Override
     public void validPicture(Picture picture) {
@@ -657,6 +663,23 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         }
     }
 
+
+    @Override
+    public CreateOutPaintingTaskResponse createOutPaintingTask(CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest, User loginUser) {
+        // 获取图片信息
+        Long pictureId = createPictureOutPaintingTaskRequest.getPictureId();
+        Picture picture = Optional.ofNullable(this.getById(pictureId)).orElseThrow(() -> new BusinessException(ErrorCode.NO_AUTH_ERROR, "图片不存在"));
+        // 校验权限
+        this.validPictureAuth(picture, loginUser);
+        // 构建请求参数
+        CreateOutPaintingTaskRequest taskRequest = new CreateOutPaintingTaskRequest();
+        BeanUtils.copyProperties(createPictureOutPaintingTaskRequest, taskRequest);
+        CreateOutPaintingTaskRequest.Input input = new CreateOutPaintingTaskRequest.Input();
+        input.setImageUrl(picture.getUrl());
+        taskRequest.setInput(input);
+        // 调用接口创建扩展任务
+        return aliYunAiApi.createOutPaintingTask(taskRequest);
+    }
 
 }
 

@@ -2,6 +2,9 @@ package com.hl.hlpicturebackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.hl.hlpicturebackend.api.aliyunai.model.CreateOutPaintingTaskRequest;
+import com.hl.hlpicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
+import com.hl.hlpicturebackend.model.dto.picture.CreatePictureOutPaintingTaskRequest;
 import com.hl.hlpicturebackend.model.dto.space.SpaceAddRequest;
 import com.hl.hlpicturebackend.model.dto.space.SpaceQueryRequest;
 import com.hl.hlpicturebackend.model.entity.Space;
