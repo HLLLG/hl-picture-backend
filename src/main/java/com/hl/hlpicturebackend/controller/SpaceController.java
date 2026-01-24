@@ -102,9 +102,8 @@ public class SpaceController {
         // 判断空间是否存在
         Space oldSpace = spaceService.getById(space.getId());
         ThrowUtils.throwIf(ObjUtil.isNull(oldSpace), ErrorCode.NOT_FOUND_ERROR, "空间不存在");
-        // 仅管理员和空间创建者可编辑
-        ThrowUtils.throwIf(!userService.isAdmin(loginUser) && !oldSpace.getUserId().equals(loginUser.getId()),
-                ErrorCode.NO_AUTH_ERROR);
+        // 校验权限
+        spaceService.checkSpaceAuth(oldSpace, loginUser);
         // 执行更新
         boolean result = spaceService.updateById(space);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR, "空间编辑失败");

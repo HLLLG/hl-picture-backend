@@ -114,9 +114,8 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         // 判断空间是否存在
         Space space = this.getById(spaceId);
         ThrowUtils.throwIf(ObjUtil.isNull(space), ErrorCode.NOT_FOUND_ERROR, "空间不存在");
-        // 仅管理员和空间创建者可删除
-        ThrowUtils.throwIf(!userService.isAdmin(loginUser) && !space.getUserId().equals(loginUser.getId()),
-                ErrorCode.NO_AUTH_ERROR);
+        // 校验权限
+        this.checkSpaceAuth(space, loginUser);
         // 删除空间
         boolean result = this.removeById(spaceId);
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR, "空间删除失败");
@@ -193,6 +192,13 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                 space.setMaxCount(maxCount);
             }
         }
+    }
+
+    @Override
+    public void checkSpaceAuth(Space space, User loginUser) {
+        // 仅管理员和空间创建者可访问
+        ThrowUtils.throwIf(!userService.isAdmin(loginUser) && !space.getUserId().equals(loginUser.getId()),
+                ErrorCode.NO_AUTH_ERROR);
     }
 }
 
