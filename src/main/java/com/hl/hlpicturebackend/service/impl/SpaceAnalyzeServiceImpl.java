@@ -109,7 +109,7 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> imp
         queryWrapper.groupBy("category");
         // 查询数据库，并转换结果
         return pictureService.getBaseMapper().selectMaps(queryWrapper).stream().map(result -> {
-            String category = result.get("category") == null ? result.get("category").toString() : "未分类";
+            String category = result.get("category") != null ? result.get("category").toString() : "未分类";
             Long count = ((Number) result.get("count")).longValue();
             Long totalSize = ((Number) result.get("totalSize")).longValue();
             return new SpaceCategoryAnalyzeResponse(category, count, totalSize);
