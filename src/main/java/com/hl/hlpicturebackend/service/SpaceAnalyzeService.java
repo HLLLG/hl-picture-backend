@@ -31,6 +31,14 @@ public interface SpaceAnalyzeService extends IService<Space> {
     List<SpaceCategoryAnalyzeResponse> getSpaceCategoryAnalyze(SpaceCategoryAnalyzeRequest spaceCategoryAnalyzeRequest, User loginUser);
 
     /**
+     * 获取空间等级分析结果
+     * @param spaceLevelAnalyzeRequest
+     * @param loginUser
+     * @return
+     */
+    List<SpaceLevelAnalyzeResponse> getSpaceLevelAnalyze(SpaceLevelAnalyzeRequest spaceLevelAnalyzeRequest, User loginUser);
+
+    /**
      * 获取空间标签使用分析结果
      * @param spaceTagAnalyzeRequest
      * @param loginUser

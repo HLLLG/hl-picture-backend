@@ -97,7 +97,6 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> imp
 
     @Override
     public List<SpaceCategoryAnalyzeResponse> getSpaceCategoryAnalyze(SpaceCategoryAnalyzeRequest spaceCategoryAnalyzeRequest, User loginUser) {
-
         // 校验权限
         this.checkSpaceAnalyzeAuth(spaceCategoryAnalyzeRequest, loginUser);
         // 构建查询条件，需要到picture中查询
@@ -114,6 +113,25 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> imp
             Long totalSize = ((Number) result.get("totalSize")).longValue();
             return new SpaceCategoryAnalyzeResponse(category, count, totalSize);
         }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<SpaceLevelAnalyzeResponse> getSpaceLevelAnalyze(SpaceLevelAnalyzeRequest spaceLevelAnalyzeRequest, User loginUser) {
+        // 校验权限，仅管理员可查询
+        ThrowUtils.throwIf(!userService.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR);
+        // 构建查询条件，需要到space中查询
+        QueryWrapper<Space> queryWrapper = new QueryWrapper<>();
+        // 取前N名
+        queryWrapper.select("spaceLevel", "count(*) AS count")
+                .groupBy("spaceLevel");
+        // 查询数据库
+        return this.getBaseMapper().selectMaps(queryWrapper)
+                .stream()
+                .map(result -> {
+                    String spaceLevel = result.get("spaceLevel").toString();
+                    Long count = ((Number) result.get("count")).longValue();
+                    return new SpaceLevelAnalyzeResponse(spaceLevel, count);
+                }).collect(Collectors.toList());
     }
 
     @Override
@@ -220,7 +238,7 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space> imp
         QueryWrapper<Space> queryWrapper = new QueryWrapper<>();
         // 取前N名
         queryWrapper.select("id", "spaceName", "userId" , "totalSize")
-                .orderByAsc("totalSize")
+                .orderByDesc("totalSize")
                 .last("LIMIT " + spaceRankAnalyzeRequest.getTopN());
         // 查询数据库
         return this.getBaseMapper().selectList(queryWrapper);

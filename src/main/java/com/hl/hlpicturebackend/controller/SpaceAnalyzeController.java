@@ -141,4 +141,22 @@ public class SpaceAnalyzeController {
         List<Space> response = spaceAnalyzeService.getSpaceRankAnalyze(spaceRankAnalyzeRequest, loginUser);
         return ResultUtils.success(response);
     }
+
+    /**
+     * 分析空间等级使用情况
+     *
+     * @param spaceLevelAnalyzeRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/level")
+    public BaseResponse<List<SpaceLevelAnalyzeResponse>> getSpaceLevelAnalyze(@RequestBody SpaceLevelAnalyzeRequest spaceLevelAnalyzeRequest,
+                                                                            HttpServletRequest request) {
+        // 校验请求参数
+        ThrowUtils.throwIf(ObjUtil.isNull(spaceLevelAnalyzeRequest), ErrorCode.PARAMS_ERROR);
+        // 获取登录用户
+        User loginUser = userService.getLoginUser(request);
+        List<SpaceLevelAnalyzeResponse> response = spaceAnalyzeService.getSpaceLevelAnalyze(spaceLevelAnalyzeRequest, loginUser);
+        return ResultUtils.success(response);
+    }
 }
