@@ -1,4 +1,4 @@
-package com.hl.hlpicturebackend.model.dto.space;
+package com.hl.hlpicturebackend.model.vo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

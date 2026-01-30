@@ -9,10 +9,12 @@ import com.hl.hlpicturebackend.common.ResultUtils;
 import com.hl.hlpicturebackend.constant.UserConstant;
 import com.hl.hlpicturebackend.exception.ErrorCode;
 import com.hl.hlpicturebackend.exception.ThrowUtils;
+import com.hl.hlpicturebackend.manager.auth.SpaceUserAuthManager;
 import com.hl.hlpicturebackend.model.dto.space.*;
 import com.hl.hlpicturebackend.model.entity.Space;
 import com.hl.hlpicturebackend.model.entity.User;
 import com.hl.hlpicturebackend.model.enums.SpaceLevelEnum;
+import com.hl.hlpicturebackend.model.vo.SpaceLevel;
 import com.hl.hlpicturebackend.model.vo.SpaceVO;
 import com.hl.hlpicturebackend.service.PictureService;
 import com.hl.hlpicturebackend.service.SpaceService;
@@ -39,6 +41,9 @@ public class SpaceController {
 
     @Resource
     private PictureService pictureService;
+
+    @Resource
+    private SpaceUserAuthManager spaceUserAuthManager;
 
     /**
      * 添加空间
@@ -161,14 +166,18 @@ public class SpaceController {
      * @return
      */
     @PostMapping("/get/vo")
-    public BaseResponse<SpaceVO> getSpaceVOById(Long id) {
+    public BaseResponse<SpaceVO> getSpaceVOById(Long id, HttpServletRequest request) {
         // 校验请求参数
         ThrowUtils.throwIf(ObjUtil.isNull(id) || id <= 0, ErrorCode.PARAMS_ERROR);
         // 获取空间
         Space space = spaceService.getById(id);
         ThrowUtils.throwIf(ObjUtil.isNull(space), ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+        // 获取当前用户
+        User loginUser = userService.getLoginUser(request);
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
         // 转换为 VO
         SpaceVO spaceVO = spaceService.getSpaceVO(space);
+        spaceVO.setPermissionList(permissionList);
         return ResultUtils.success(spaceVO);
     }
 

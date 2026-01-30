@@ -102,8 +102,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         // 判断图片是否存在
         Picture oldPicture = this.getById(pictureId);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
-        // 校验权限
-        this.validPictureAuth(oldPicture, loginUser);
+        // 校验权限，已经改为使用注解鉴权
+//        this.validPictureAuth(oldPicture, loginUser);
         // 开启事务
         Long finalSpaceId = oldPicture.getSpaceId();
         transactionTemplate.execute(status -> {
@@ -127,8 +127,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         // 判断图片是否存在
         Picture oldPicture = this.getById(pictureEditRequest.getId());
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
-        // 验证用户是否有权限操作
-        this.validPictureAuth(oldPicture, loginUser);
+        // 校验权限，已经改为使用注解鉴权
+//        this.validPictureAuth(oldPicture, loginUser);
         // 将实体类和dto 进行转换
         Picture picture = new Picture();
         BeanUtils.copyProperties(pictureEditRequest, picture);
@@ -669,8 +669,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         // 获取图片信息
         Long pictureId = createPictureOutPaintingTaskRequest.getPictureId();
         Picture picture = Optional.ofNullable(this.getById(pictureId)).orElseThrow(() -> new BusinessException(ErrorCode.NO_AUTH_ERROR, "图片不存在"));
-        // 校验权限
-        this.validPictureAuth(picture, loginUser);
+        // 校验权限，已经改为使用注解鉴权
+//        this.validPictureAuth(picture, loginUser);
         // 构建请求参数
         CreateOutPaintingTaskRequest taskRequest = new CreateOutPaintingTaskRequest();
         BeanUtils.copyProperties(createPictureOutPaintingTaskRequest, taskRequest);

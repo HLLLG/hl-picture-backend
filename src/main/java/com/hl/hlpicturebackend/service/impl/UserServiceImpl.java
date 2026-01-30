@@ -1,5 +1,6 @@
 package com.hl.hlpicturebackend.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateTime;
@@ -13,6 +14,7 @@ import com.hl.hlpicturebackend.constant.UserConstant;
 import com.hl.hlpicturebackend.exception.BusinessException;
 import com.hl.hlpicturebackend.exception.ErrorCode;
 import com.hl.hlpicturebackend.exception.ThrowUtils;
+import com.hl.hlpicturebackend.manager.auth.StpKit;
 import com.hl.hlpicturebackend.mapper.UserMapper;
 import com.hl.hlpicturebackend.model.dto.user.UserQueryRequest;
 import com.hl.hlpicturebackend.model.dto.user.UserUpdateRequest;
@@ -33,14 +35,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
-* @author hegl
-* @description 针对表【user(用户)】的数据库操作Service实现
-* @createDate 2025-12-16 00:53:25
-*/
+ * @author hegl
+ * @description 针对表【user(用户)】的数据库操作Service实现
+ * @createDate 2025-12-16 00:53:25
+ */
 @Service
 @Slf4j
-public class UserServiceImpl extends ServiceImpl<UserMapper, User>
-    implements UserService{
+public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
     @Override
     public Long registerUser(String userAccount, String userPassword, String checkPassword) {
@@ -48,7 +49,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (StrUtil.hasBlank(userAccount, userPassword, checkPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
         }
-        if (userAccount.length() < 4 ) {
+        if (userAccount.length() < 4) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号长度过短");
         }
         if (!userPassword.equals(checkPassword)) {
@@ -94,11 +95,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // 不存在，抛异常
         ThrowUtils.throwIf(user == null, ErrorCode.PARAMS_ERROR, "账号不存在或密码错误");
         log.info("user login failed, userPassword cannot match userAccount");
-        // 3 更新用户修改时间
-        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
+        // 4 校验密码
+        ThrowUtils.throwIf(!user.getUserPassword().equals(encryptPassWord), ErrorCode.PARAMS_ERROR, "账号不存在或密码错误");
+        // 5 更新用户修改时间
         UpdateWrapper<User> updateWrapper = new UpdateWrapper<User>().eq("editTime", DateTime.now());
         this.update(user, updateWrapper);
-        // 4 脱敏
+        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
+        // 记录用户登录态到Sa-Token, 便于空间鉴权时使用
+        StpKit.SPACE.login(user.getId());
+        StpKit.SPACE.getSession().set(UserConstant.USER_LOGIN_STATE, user);
+        // 6 脱敏
         return this.getLoginUserVO(user);
     }
 
@@ -129,6 +135,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     /**
      * 获取加密后的密码
+     *
      * @param password
      * @return
      */
@@ -136,6 +143,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public String getEncryptPassWord(String password) {
         // 加盐，混淆密码
         final String SALT = "hl";
+        password = SALT + password;
         return DigestUtils.md5DigestAsHex(password.getBytes());
     }
 
@@ -170,9 +178,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (CollUtil.isEmpty(userList)) {
             return new ArrayList<>();
         }
-        return userList.stream()
-                .map(this::getUserVO)
-                .collect(Collectors.toList());
+        return userList.stream().map(this::getUserVO).collect(Collectors.toList());
     }
 
     @Override
