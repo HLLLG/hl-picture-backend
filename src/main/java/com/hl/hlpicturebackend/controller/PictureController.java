@@ -4,6 +4,7 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -275,11 +276,15 @@ public class PictureController {
             // Space space = spaceService.getById(spaceId);
             // ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
             // ThrowUtils.throwIf(!space.getUserId().equals(loginUser.getId()), ErrorCode.NO_AUTH_ERROR, "无权限访问该空间图片");
-            // pictureQueryRequest.setNullSpaceId(false);
+            pictureQueryRequest.setNullSpaceId(false);
         }
-        // 查询数据库
-        Page<Picture> picturePage = pictureService.page(new Page<>(current, pageSize),
-                pictureService.getPictureQueryWrapper(pictureQueryRequest));
+        // 确保分页查询也能正确路由到所有相关分片
+        QueryWrapper<Picture> wrapper = pictureService.getPictureQueryWrapper(pictureQueryRequest);
+
+        // 打印实际执行的 SQL 进行调试
+        log.info("Query wrapper: {}", wrapper.getTargetSql());
+
+        Page<Picture> picturePage = pictureService.page(new Page<>(current, pageSize), wrapper);
 
         // 判断是否按颜色排序
         pictureService.validPicturePageSortByColor(picturePage, pictureQueryRequest.getPicColor());

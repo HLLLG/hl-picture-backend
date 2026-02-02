@@ -148,7 +148,7 @@ public class SpaceController {
      * @param id
      * @return
      */
-    @PostMapping("/get")
+    @GetMapping("/get")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Space> getSpaceById(Long id) {
         // 校验请求参数
@@ -165,7 +165,7 @@ public class SpaceController {
      * @param id
      * @return
      */
-    @PostMapping("/get/vo")
+    @GetMapping("/get/vo")
     public BaseResponse<SpaceVO> getSpaceVOById(Long id, HttpServletRequest request) {
         // 校验请求参数
         ThrowUtils.throwIf(ObjUtil.isNull(id) || id <= 0, ErrorCode.PARAMS_ERROR);

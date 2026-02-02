@@ -72,8 +72,9 @@ public class StpInterfaceImpl implements StpInterface {
         List<String> ADMIN_PERMISSIONS = spaceUserAuthManager.getPermissionsByRole(SpaceRoleEnum.ADMIN.getValue());
         // 获取上下文对象
         SpaceUserAuthContext authContext = getAuthContextByRequest();
+        // 如果所有字段为空，表示查询公共图库，可以通过
         if (isAllFieldsNull(authContext)) {
-            return new ArrayList<>();
+            return ADMIN_PERMISSIONS;
         }
         // 判断用户是否登录
         User loginUer = (User) StpKit.SPACE.getSession().get(UserConstant.USER_LOGIN_STATE);
@@ -193,7 +194,6 @@ public class StpInterfaceImpl implements StpInterface {
                     authContext.setPictureId(id);
                     break;
                 default:
-                    break;
             }
         }
         return authContext;

@@ -6,15 +6,11 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.hl.hlpicturebackend.api.aliyunai.model.CreateOutPaintingTaskRequest;
-import com.hl.hlpicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
 import com.hl.hlpicturebackend.exception.ErrorCode;
 import com.hl.hlpicturebackend.exception.ThrowUtils;
 import com.hl.hlpicturebackend.mapper.SpaceMapper;
-import com.hl.hlpicturebackend.model.dto.picture.CreatePictureOutPaintingTaskRequest;
 import com.hl.hlpicturebackend.model.dto.space.SpaceAddRequest;
 import com.hl.hlpicturebackend.model.dto.space.SpaceQueryRequest;
-import com.hl.hlpicturebackend.model.entity.Picture;
 import com.hl.hlpicturebackend.model.entity.Space;
 import com.hl.hlpicturebackend.model.entity.SpaceUser;
 import com.hl.hlpicturebackend.model.entity.User;
@@ -27,7 +23,6 @@ import com.hl.hlpicturebackend.service.SpaceService;
 import com.hl.hlpicturebackend.service.SpaceUserService;
 import com.hl.hlpicturebackend.service.UserService;
 import org.springframework.beans.BeanUtils;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -55,6 +50,10 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
 
     @Resource
     private SpaceUserService spaceUserService;
+
+//    @Resource 注释分表
+//    @Lazy
+//    private DynamicShardingManager dynamicShardingManager;
 
     @Override
     public void validSpace(Space space, boolean isAdd) {
@@ -125,7 +124,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                 boolean result = this.save(space);
                 ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "空间创建失败");
                 // 如果是创建团队空间，则自动添加当前用户为成员
-                if (space.getSpaceType() == SpaceTypeEnum.PRIVATE.getValue()) {
+                if (space.getSpaceType() == SpaceTypeEnum.TEAM.getValue()) {
                     SpaceUser spaceUser = new SpaceUser();
                     spaceUser.setSpaceId(space.getId());
                     spaceUser.setUserId(loginUser.getId());
@@ -133,8 +132,11 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                     result = spaceUserService.save(spaceUser);
                     ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
                 }
+                // 创建分表 (仅旗舰版团队空间) 为了方便使用，注释掉
+//                dynamicShardingManager.createSpacePictureTable(space);
                 return space.getId();
             });
+
             return Optional.ofNullable(executeId).orElse(-1L);
         }
     }
