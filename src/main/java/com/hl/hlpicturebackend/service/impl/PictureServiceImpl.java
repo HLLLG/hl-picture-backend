@@ -159,8 +159,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             // 校验空间是否存在
             Space space = spaceService.getById(spaceId);
             ThrowUtils.throwIf(space == null, ErrorCode.PARAMS_ERROR, "空间不存在");
+            // 改为使用统一权限校验
             // 仅空间创建者能上传到该空间
-            ThrowUtils.throwIf(!loginUser.getId().equals(space.getUserId()), ErrorCode.NO_AUTH_ERROR, "无权限上传到该空间");
+//            ThrowUtils.throwIf(!loginUser.getId().equals(space.getUserId()), ErrorCode.NO_AUTH_ERROR, "无权限上传到该空间");
             // 校验额度
             ThrowUtils.throwIf(space.getTotalSize() >= space.getMaxSize(), ErrorCode.OPERATION_ERROR, "空间存储已满，无法上传图片");
             ThrowUtils.throwIf(space.getTotalCount() >= space.getMaxCount(), ErrorCode.OPERATION_ERROR,
@@ -171,9 +172,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         if (pictureId != null) {
             oldPicture = this.getById(pictureId);
             ThrowUtils.throwIf(oldPicture == null, ErrorCode.PARAMS_ERROR, "图片不存在");
+            // 改为使用统一权限校验
             // 仅本人和管理员能更新
-            ThrowUtils.throwIf(!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser),
-                    ErrorCode.NO_AUTH_ERROR);
+//            ThrowUtils.throwIf(!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser),
+//                    ErrorCode.NO_AUTH_ERROR);
             // 校验空间是否一致
             // 如果没穿空间id，则沿用旧图片的空间id
             if (spaceId == null) {
