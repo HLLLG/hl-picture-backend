@@ -44,15 +44,15 @@ public class PictureEditEventWorkHandler implements WorkHandler<PictureEditEvent
         switch (pictureEditMessageTypeEnum) {
             case ENTER_EDIT:
                 // 处理进入编辑状态的逻辑
-                pictureEditHandler.handelEnterEditMessage(pictureEditRequestMessage, session, user, pictureId);
+                pictureEditHandler.handleEnterEditMessage(pictureEditRequestMessage, session, user, pictureId);
                 break;
             case EDIT_ACTION:
                 // 处理编辑动作的逻辑
-                pictureEditHandler.handelEditActionMessage(pictureEditRequestMessage, session, user, pictureId);
+                pictureEditHandler.handleEditActionMessage(pictureEditRequestMessage, session, user, pictureId);
                 break;
             case EXIT_EDIT:
                 // 处理退出编辑状态的逻辑
-                pictureEditHandler.handelExitEditMessage(pictureEditRequestMessage, session, user, pictureId);
+                pictureEditHandler.handleExitEditMessage(pictureEditRequestMessage, session, user, pictureId);
                 break;
             default:
                 PictureEditResponseMessage pictureEditResponseMessage = new PictureEditResponseMessage();
