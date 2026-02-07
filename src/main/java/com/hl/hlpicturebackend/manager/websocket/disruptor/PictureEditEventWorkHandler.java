@@ -54,6 +54,10 @@ public class PictureEditEventWorkHandler implements WorkHandler<PictureEditEvent
                 // 处理退出编辑状态的逻辑
                 pictureEditHandler.handleExitEditMessage(pictureEditRequestMessage, session, user, pictureId);
                 break;
+            case EDIT_SAVE:
+                // 处理保存编辑的逻辑
+                pictureEditHandler.handleEditSaveMessage(pictureEditRequestMessage, session, user, pictureId);
+                break;
             default:
                 PictureEditResponseMessage pictureEditResponseMessage = new PictureEditResponseMessage();
                 pictureEditResponseMessage.setType(PictureEditMessageTypeEnum.ERROR.getValue());

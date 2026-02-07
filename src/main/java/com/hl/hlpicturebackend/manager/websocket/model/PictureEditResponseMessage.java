@@ -1,5 +1,6 @@
 package com.hl.hlpicturebackend.manager.websocket.model;
 
+import com.hl.hlpicturebackend.model.vo.PictureVO;
 import com.hl.hlpicturebackend.model.vo.UserVO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,4 +33,9 @@ public class PictureEditResponseMessage {
      * 用户信息
      */
     private UserVO user;
+
+    /**
+     * 图片信息
+     */
+    private PictureVO picture;
 }

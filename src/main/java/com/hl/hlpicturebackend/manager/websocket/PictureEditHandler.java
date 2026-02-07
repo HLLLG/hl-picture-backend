@@ -11,6 +11,7 @@ import com.hl.hlpicturebackend.manager.websocket.model.PictureEditMessageTypeEnu
 import com.hl.hlpicturebackend.manager.websocket.model.PictureEditRequestMessage;
 import com.hl.hlpicturebackend.manager.websocket.model.PictureEditResponseMessage;
 import com.hl.hlpicturebackend.model.entity.User;
+import com.hl.hlpicturebackend.service.PictureService;
 import com.hl.hlpicturebackend.service.UserService;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -33,6 +34,9 @@ public class PictureEditHandler extends TextWebSocketHandler {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private PictureService pictureService;
 
     @Resource
     @Lazy
@@ -80,7 +84,8 @@ public class PictureEditHandler extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         // 将消息解析为 PictureEditMessage
-        PictureEditRequestMessage pictureEditRequestMessage = JSONUtil.toBean(message.getPayload(), PictureEditRequestMessage.class);
+        PictureEditRequestMessage pictureEditRequestMessage = JSONUtil.toBean(message.getPayload(),
+                PictureEditRequestMessage.class);
         String type = pictureEditRequestMessage.getType();
 
         // 从 Session 属性中获取公共参数
@@ -95,6 +100,7 @@ public class PictureEditHandler extends TextWebSocketHandler {
 
     /**
      * 处理退出编辑状态的逻辑
+     *
      * @param pictureEditRequestMessage
      * @param session
      * @param user
@@ -119,6 +125,7 @@ public class PictureEditHandler extends TextWebSocketHandler {
 
     /**
      * 处理编辑动作的逻辑
+     *
      * @param pictureEditRequestMessage
      * @param session
      * @param user
@@ -140,7 +147,8 @@ public class PictureEditHandler extends TextWebSocketHandler {
             PictureEditResponseMessage pictureEditResponseMessage = new PictureEditResponseMessage();
             pictureEditResponseMessage.setType(PictureEditMessageTypeEnum.EDIT_ACTION.getValue());
             pictureEditResponseMessage.setEditAction(editAction);
-            pictureEditResponseMessage.setMessage(String.format("%s执行%s", user.getUserName(), editActionEnum.getText()));
+            pictureEditResponseMessage.setMessage(String.format("%s执行%s", user.getUserName(),
+                    editActionEnum.getText()));
             pictureEditResponseMessage.setUser(userService.getUserVO(user));
             // 广播给除了当前用户的其他用户，否则会重复编辑
             this.broadcastToPicture(pictureId, pictureEditResponseMessage, session);
@@ -150,6 +158,7 @@ public class PictureEditHandler extends TextWebSocketHandler {
 
     /**
      * 处理进入编辑状态的逻辑
+     *
      * @param pictureEditRequestMessage
      * @param session
      * @param user
@@ -171,7 +180,31 @@ public class PictureEditHandler extends TextWebSocketHandler {
             // 广播给用一张图片的用户
             this.broadcastToPicture(pictureId, pictureEditResponseMessage);
         }
+    }
 
+
+    /**
+     * 处理保存编辑的逻辑
+     *
+     * @param pictureEditRequestMessage
+     * @param session
+     * @param user
+     * @param pictureId
+     */
+    public void handleEditSaveMessage(PictureEditRequestMessage pictureEditRequestMessage, WebSocketSession session,
+                                      User user, Long pictureId) throws IOException {
+        // 只有当前用户正在编辑该图片，才能保存编辑
+        Long editUserId = pictureEditUsers.get(pictureId);
+        if (editUserId != null && editUserId.equals(user.getId())) {
+            // 构造响应消息
+            PictureEditResponseMessage pictureEditResponseMessage = new PictureEditResponseMessage();
+            pictureEditResponseMessage.setType(PictureEditMessageTypeEnum.EDIT_SAVE.getValue());
+            pictureEditResponseMessage.setMessage(String.format("%s保存编辑", user.getUserName()));
+            pictureEditResponseMessage.setUser(userService.getUserVO(user));
+            pictureEditResponseMessage.setPicture(pictureService.getPictureVO(pictureService.getById(pictureId)));
+            // 广播给用一张图片的用户
+            this.broadcastToPicture(pictureId, pictureEditResponseMessage);
+        }
     }
 
     @Override
