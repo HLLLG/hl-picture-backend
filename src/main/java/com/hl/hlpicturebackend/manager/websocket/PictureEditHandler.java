@@ -80,7 +80,8 @@ public class PictureEditHandler extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         // 将消息解析为 PictureEditMessage
-        PictureEditRequestMessage pictureEditRequestMessage = JSONUtil.toBean(message.getPayload(), PictureEditRequestMessage.class);
+        PictureEditRequestMessage pictureEditRequestMessage = JSONUtil.toBean(message.getPayload(),
+                PictureEditRequestMessage.class);
         String type = pictureEditRequestMessage.getType();
 
         // 从 Session 属性中获取公共参数
@@ -171,7 +172,31 @@ public class PictureEditHandler extends TextWebSocketHandler {
             // 广播给用一张图片的用户
             this.broadcastToPicture(pictureId, pictureEditResponseMessage);
         }
+    }
 
+
+    /**
+     * 处理保存编辑的逻辑
+     *
+     * @param pictureEditRequestMessage
+     * @param session
+     * @param user
+     * @param pictureId
+     */
+    public void handleEditSaveMessage(PictureEditRequestMessage pictureEditRequestMessage, WebSocketSession session,
+                                      User user, Long pictureId) throws IOException {
+        // 只有当前用户正在编辑该图片，才能保存编辑
+        Long editUserId = pictureEditUsers.get(pictureId);
+        if (editUserId != null && editUserId.equals(user.getId())) {
+            // 构造响应消息
+            PictureEditResponseMessage pictureEditResponseMessage = new PictureEditResponseMessage();
+            pictureEditResponseMessage.setType(PictureEditMessageTypeEnum.EDIT_SAVE.getValue());
+            pictureEditResponseMessage.setMessage(String.format("%s保存编辑", user.getUserName()));
+            pictureEditResponseMessage.setUser(userService.getUserVO(user));
+            pictureEditResponseMessage.setPicture(pictureService.getPictureVO(pictureService.getById(pictureId)));
+            // 广播给用一张图片的用户
+            this.broadcastToPicture(pictureId, pictureEditResponseMessage);
+        }
     }
 
     @Override
