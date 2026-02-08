@@ -1,7 +1,7 @@
 package com.hl.hlpicturebackend.manager.websocket.disruptor;
 
 import com.hl.hlpicturebackend.manager.websocket.model.PictureEditRequestMessage;
-import com.hl.hlpicturebackend.model.entity.User;
+import com.hl.hlpicture.domain.user.entity.User;
 import lombok.Data;
 import org.springframework.web.socket.WebSocketSession;
 

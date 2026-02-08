@@ -9,19 +9,18 @@ import cn.hutool.extra.servlet.ServletUtil;
 import cn.hutool.http.ContentType;
 import cn.hutool.http.Header;
 import cn.hutool.json.JSONUtil;
+import com.hl.hlpicture.application.service.PictureApplicationService;
+import com.hl.hlpicture.domain.picture.entity.Picture;
+import com.hl.hlpicture.domain.user.entity.User;
+import com.hl.hlpicture.infrastructure.exception.ErrorCode;
+import com.hl.hlpicture.infrastructure.exception.ThrowUtils;
 import com.hl.hlpicturebackend.constant.UserConstant;
-import com.hl.hlpicturebackend.exception.ErrorCode;
-import com.hl.hlpicturebackend.exception.ThrowUtils;
-import com.hl.hlpicturebackend.model.entity.Picture;
-import com.hl.hlpicturebackend.model.entity.Space;
-import com.hl.hlpicturebackend.model.entity.SpaceUser;
-import com.hl.hlpicturebackend.model.entity.User;
-import com.hl.hlpicturebackend.model.enums.SpaceRoleEnum;
-import com.hl.hlpicturebackend.model.enums.SpaceTypeEnum;
-import com.hl.hlpicturebackend.service.PictureService;
-import com.hl.hlpicturebackend.service.SpaceService;
-import com.hl.hlpicturebackend.service.SpaceUserService;
-import com.hl.hlpicturebackend.service.UserService;
+import com.hl.hlpicture.domain.space.entity.Space;
+import com.hl.hlpicture.domain.space.entity.SpaceUser;
+import com.hl.hlpicture.domain.space.valueobject.SpaceRoleEnum;
+import com.hl.hlpicture.domain.space.valueobject.SpaceTypeEnum;
+import com.hl.hlpicture.application.service.SpaceApplicationService;
+import com.hl.hlpicture.application.service.SpaceUserApplicationService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestAttributes;
@@ -48,16 +47,14 @@ public class StpInterfaceImpl implements StpInterface {
     private SpaceUserAuthManager spaceUserAuthManager;
 
     @Resource
-    private SpaceUserService spaceUserService;
+    private SpaceUserApplicationService spaceUserApplicationService;
 
     @Resource
-    private PictureService pictureService;
+    private PictureApplicationService pictureApplicationService;
+
 
     @Resource
-    private UserService userService;
-
-    @Resource
-    private SpaceService spaceService;
+    private SpaceApplicationService spaceApplicationService;
 
     /**
      * 返回一个账号所拥有的权限码集合 
@@ -88,10 +85,10 @@ public class StpInterfaceImpl implements StpInterface {
         // 如果有spaceUserId, 必然是团队空间， 通过数据库查询 SpaceUser 对象
         Long spaceUserId = authContext.getSpaceUserId();
         if (ObjUtil.isNotEmpty(spaceUserId)) {
-            spaceUser = spaceUserService.getById(spaceUserId);
+            spaceUser = spaceUserApplicationService.getById(spaceUserId);
             ThrowUtils.throwIf(spaceUser == null, ErrorCode.NO_AUTH_ERROR, "未找到空间用户信息");
             // 取出当前用户对应的spaceUser对象
-            SpaceUser loginSpaceUser = spaceUserService.lambdaQuery()
+            SpaceUser loginSpaceUser = spaceUserApplicationService.lambdaQuery()
                     .eq(SpaceUser::getUserId, userId)
                     .eq(SpaceUser::getSpaceId, spaceUser.getSpaceId())
                     .one();
@@ -111,12 +108,12 @@ public class StpInterfaceImpl implements StpInterface {
             if (ObjUtil.isEmpty(pictureId)) {
                 return ADMIN_PERMISSIONS;
             }
-            Picture picture = pictureService.getById(pictureId);
+            Picture picture = pictureApplicationService.getById(pictureId);
             ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR, "未找到图片信息");
             spaceId = picture.getSpaceId();
             // 公共图库，上传者或管理员返回管理员权限
             if (spaceId == null) {
-                if (picture.getUserId().equals(userId) || userService.isAdmin(loginUer)) {
+                if (picture.getUserId().equals(userId) || loginUer.isAdmin()) {
                     return ADMIN_PERMISSIONS;
                 } else {
                     // 不是自己的图片，且非管理员，无权限
@@ -125,18 +122,18 @@ public class StpInterfaceImpl implements StpInterface {
             }
         }
         // 获取 Space 对象
-        Space space = spaceService.getById(spaceId);
+        Space space = spaceApplicationService.getById(spaceId);
         ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "未找到空间信息");
         // 私有空间，仅空间创建者或管理员有管理员权限
         if (SpaceTypeEnum.PRIVATE.getValue() == space.getSpaceType()) {
-            if (space.getUserId().equals(userId) || userService.isAdmin(loginUer)) {
+            if (space.getUserId().equals(userId) || loginUer.isAdmin()) {
                 return ADMIN_PERMISSIONS;
             } else {
                 return new ArrayList<>();
             }
         } else {
             // 团队空间，查询当前用户的 SpaceUser 对象
-            spaceUser = spaceUserService.lambdaQuery()
+            spaceUser = spaceUserApplicationService.lambdaQuery()
                     .eq(SpaceUser::getUserId, userId)
                     .eq(SpaceUser::getSpaceId, spaceId)
                     .one();

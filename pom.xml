@@ -3,10 +3,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.hl</groupId>
-    <artifactId>hl-picture-backend</artifactId>
+    <artifactId>hl-picture-backend-ddd</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>hl-picture-backend</name>
-    <description>hl-picture-backend</description>
+    <name>hl-picture-backend-ddd</name>
+    <description>hl-picture-backend-ddd</description>
     <properties>
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -161,7 +161,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>com.hl.hlpicturebackend.HlPictureBackendApplication</mainClass>
+                    <mainClass>com.hl.hlpicture.HlPictureBackendApplication</mainClass>
                     <skip>true</skip>
                 </configuration>
                 <executions>

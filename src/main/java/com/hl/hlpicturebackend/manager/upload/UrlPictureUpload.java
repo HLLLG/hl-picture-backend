@@ -7,9 +7,9 @@ import cn.hutool.http.HttpStatus;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.http.Method;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
-import com.hl.hlpicturebackend.exception.BusinessException;
-import com.hl.hlpicturebackend.exception.ErrorCode;
-import com.hl.hlpicturebackend.exception.ThrowUtils;
+import com.hl.hlpicture.infrastructure.exception.BusinessException;
+import com.hl.hlpicture.infrastructure.exception.ErrorCode;
+import com.hl.hlpicture.infrastructure.exception.ThrowUtils;
 import org.springframework.stereotype.Service;
 
 import java.io.File;

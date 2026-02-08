@@ -1,8 +1,8 @@
 package com.hl.hlpicturebackend.manager.upload;
 
 import cn.hutool.core.io.FileUtil;
-import com.hl.hlpicturebackend.exception.ErrorCode;
-import com.hl.hlpicturebackend.exception.ThrowUtils;
+import com.hl.hlpicture.infrastructure.exception.ErrorCode;
+import com.hl.hlpicture.infrastructure.exception.ThrowUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 

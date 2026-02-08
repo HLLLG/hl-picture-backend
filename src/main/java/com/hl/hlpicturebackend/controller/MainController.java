@@ -1,7 +1,7 @@
 package com.hl.hlpicturebackend.controller;
 
-import com.hl.hlpicturebackend.common.BaseResponse;
-import com.hl.hlpicturebackend.common.ResultUtils;
+import com.hl.hlpicture.infrastructure.common.BaseResponse;
+import com.hl.hlpicture.infrastructure.common.ResultUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

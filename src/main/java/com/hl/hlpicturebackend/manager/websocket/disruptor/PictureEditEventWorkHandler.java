@@ -5,8 +5,8 @@ import com.hl.hlpicturebackend.manager.websocket.PictureEditHandler;
 import com.hl.hlpicturebackend.manager.websocket.model.PictureEditMessageTypeEnum;
 import com.hl.hlpicturebackend.manager.websocket.model.PictureEditRequestMessage;
 import com.hl.hlpicturebackend.manager.websocket.model.PictureEditResponseMessage;
-import com.hl.hlpicturebackend.model.entity.User;
-import com.hl.hlpicturebackend.service.UserService;
+import com.hl.hlpicture.domain.user.entity.User;
+import com.hl.hlpicture.application.service.UserApplicationService;
 import com.lmax.disruptor.WorkHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -26,7 +26,7 @@ public class PictureEditEventWorkHandler implements WorkHandler<PictureEditEvent
     private PictureEditHandler pictureEditHandler;
 
     @Resource
-    private UserService userService;
+    private UserApplicationService userApplicationService;
 
     @Override
     public void onEvent(PictureEditEvent pictureEditEvent) throws Exception {
@@ -58,7 +58,7 @@ public class PictureEditEventWorkHandler implements WorkHandler<PictureEditEvent
                 PictureEditResponseMessage pictureEditResponseMessage = new PictureEditResponseMessage();
                 pictureEditResponseMessage.setType(PictureEditMessageTypeEnum.ERROR.getValue());
                 pictureEditResponseMessage.setMessage("消息类型错误");
-                pictureEditResponseMessage.setUser(userService.getUserVO(user));
+                pictureEditResponseMessage.setUser(userApplicationService.getUserVO(user));
                 session.sendMessage(new TextMessage(JSONUtil.toJsonStr(pictureEditResponseMessage)));
         }
     }

@@ -1,7 +1,7 @@
 package com.hl.hlpicturebackend.manager;
 
 import cn.hutool.core.io.FileUtil;
-import com.hl.hlpicturebackend.config.CosClientConfig;
+import com.hl.hlpicture.infrastructure.config.CosClientConfig;
 import com.qcloud.cos.COSClient;
 import com.qcloud.cos.exception.CosClientException;
 import com.qcloud.cos.exception.CosServiceException;

@@ -1,8 +1,8 @@
 package com.hl.hlpicturebackend.manager.auth;
 
-import com.hl.hlpicturebackend.model.entity.Picture;
-import com.hl.hlpicturebackend.model.entity.Space;
-import com.hl.hlpicturebackend.model.entity.SpaceUser;
+import com.hl.hlpicture.domain.picture.entity.Picture;
+import com.hl.hlpicture.domain.space.entity.Space;
+import com.hl.hlpicture.domain.space.entity.SpaceUser;
 import lombok.Data;
 
 /**

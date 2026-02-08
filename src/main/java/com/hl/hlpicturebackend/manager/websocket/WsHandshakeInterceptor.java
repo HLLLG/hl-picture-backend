@@ -1,16 +1,15 @@
 package com.hl.hlpicturebackend.manager.websocket;
 
 import cn.hutool.core.util.ObjUtil;
+import com.hl.hlpicture.application.service.PictureApplicationService;
 import com.hl.hlpicturebackend.manager.auth.SpaceUserAuthManager;
 import com.hl.hlpicturebackend.manager.auth.model.SpaceUserPermissionConstant;
-import com.hl.hlpicturebackend.model.entity.Picture;
-import com.hl.hlpicturebackend.model.entity.Space;
-import com.hl.hlpicturebackend.model.entity.User;
-import com.hl.hlpicturebackend.model.enums.SpaceRoleEnum;
-import com.hl.hlpicturebackend.model.enums.SpaceTypeEnum;
-import com.hl.hlpicturebackend.service.PictureService;
-import com.hl.hlpicturebackend.service.SpaceService;
-import com.hl.hlpicturebackend.service.UserService;
+import com.hl.hlpicture.domain.picture.entity.Picture;
+import com.hl.hlpicture.domain.space.entity.Space;
+import com.hl.hlpicture.domain.user.entity.User;
+import com.hl.hlpicture.domain.space.valueobject.SpaceTypeEnum;
+import com.hl.hlpicture.application.service.SpaceApplicationService;
+import com.hl.hlpicture.application.service.UserApplicationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
@@ -29,13 +28,13 @@ import java.util.Map;
 public class WsHandshakeInterceptor implements HandshakeInterceptor {
 
     @Resource
-    private UserService userService;
+    private UserApplicationService userApplicationService;
 
     @Resource
-    private PictureService pictureService;
+    private PictureApplicationService pictureApplicationService;
 
     @Resource
-    private SpaceService spaceService;
+    private SpaceApplicationService spaceApplicationService;
 
     @Resource
     private SpaceUserAuthManager spaceUserAuthManager;
@@ -61,13 +60,13 @@ public class WsHandshakeInterceptor implements HandshakeInterceptor {
                 return false;
             }
             // 根据 pictureId 获取图片信息
-            Picture picture = pictureService.getById(pictureId);
+            Picture picture = pictureApplicationService.getById(pictureId);
             if (picture == null) {
                 log.error("WebSocket 握手失败，图片不存在，pictureId={}", pictureId);
                 return false;
             }
             // 获取当前用户
-            User loginUser = userService.getLoginUser(servletRequest);
+            User loginUser = userApplicationService.getLoginUser(servletRequest);
             if (loginUser == null) {
                 log.error("WebSocket 握手失败，用户未登录");
                 return false;
@@ -76,7 +75,7 @@ public class WsHandshakeInterceptor implements HandshakeInterceptor {
             Space space = null;
             if (spaceId != null) {
                 // 获取空间
-                space = spaceService.getById(spaceId);
+                space = spaceApplicationService.getById(spaceId);
                 if (space == null) {
                     log.error("WebSocket 握手失败，空间不存在，spaceId={}", spaceId);
                     return false;

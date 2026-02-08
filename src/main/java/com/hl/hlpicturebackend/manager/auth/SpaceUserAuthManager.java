@@ -3,24 +3,21 @@ package com.hl.hlpicturebackend.manager.auth;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.json.JSONUtil;
 import com.hl.hlpicturebackend.manager.auth.model.SpaceUserAuthConfig;
-import com.hl.hlpicturebackend.manager.auth.model.SpaceUserPermission;
 import com.hl.hlpicturebackend.manager.auth.model.SpaceUserPermissionConstant;
 import com.hl.hlpicturebackend.manager.auth.model.SpaceUserRole;
-import com.hl.hlpicturebackend.model.entity.Space;
-import com.hl.hlpicturebackend.model.entity.SpaceUser;
-import com.hl.hlpicturebackend.model.entity.User;
-import com.hl.hlpicturebackend.model.enums.SpaceRoleEnum;
-import com.hl.hlpicturebackend.model.enums.SpaceTypeEnum;
-import com.hl.hlpicturebackend.service.SpaceUserService;
-import com.hl.hlpicturebackend.service.UserService;
-import org.checkerframework.checker.units.qual.A;
+import com.hl.hlpicture.domain.space.entity.Space;
+import com.hl.hlpicture.domain.space.entity.SpaceUser;
+import com.hl.hlpicture.domain.user.entity.User;
+import com.hl.hlpicture.domain.space.valueobject.SpaceRoleEnum;
+import com.hl.hlpicture.domain.space.valueobject.SpaceTypeEnum;
+import com.hl.hlpicture.application.service.SpaceUserApplicationService;
+import com.hl.hlpicture.application.service.UserApplicationService;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 空间成员权限管理器
@@ -30,10 +27,10 @@ import java.util.stream.Collectors;
 public class SpaceUserAuthManager {
 
     @Resource
-    private UserService userService;
+    private UserApplicationService userApplicationService;
 
     @Resource
-    private SpaceUserService spaceUserService;
+    private SpaceUserApplicationService spaceUserApplicationService;
 
     public static final SpaceUserAuthConfig SPACE_USER_AUTH_CONFIG;
 
@@ -79,7 +76,7 @@ public class SpaceUserAuthManager {
         // 公共图库
         if (space == null) {
             // 系统管理员
-            if (userService.isAdmin(loginUser)) {
+            if (loginUser.isAdmin()) {
                 return ADMIN_PERMISSIONS;
             } else {
                 return Collections.singletonList(SpaceUserPermissionConstant.PICTURE_VIEW);
@@ -99,7 +96,7 @@ public class SpaceUserAuthManager {
                 }
             case TEAM:
                 // 团队空间，查询用户的空间成员角色，返回对应权限
-                SpaceUser spaceUser = spaceUserService.lambdaQuery()
+                SpaceUser spaceUser = spaceUserApplicationService.lambdaQuery()
                         .eq(SpaceUser::getSpaceId, space.getId())
                         .eq(SpaceUser::getUserId, loginUser.getId())
                         .one();

@@ -1,13 +1,13 @@
 package com.hl.hlpicturebackend.controller;
 
-import com.hl.hlpicturebackend.annotation.AuthCheck;
-import com.hl.hlpicturebackend.common.BaseResponse;
-import com.hl.hlpicturebackend.common.ResultUtils;
+import com.hl.hlpicture.infrastructure.annotation.AuthCheck;
+import com.hl.hlpicture.infrastructure.common.BaseResponse;
+import com.hl.hlpicture.infrastructure.common.ResultUtils;
 import com.hl.hlpicturebackend.constant.UserConstant;
-import com.hl.hlpicturebackend.exception.BusinessException;
-import com.hl.hlpicturebackend.exception.ErrorCode;
+import com.hl.hlpicture.infrastructure.exception.BusinessException;
+import com.hl.hlpicture.infrastructure.exception.ErrorCode;
 import com.hl.hlpicturebackend.manager.CosManager;
-import com.hl.hlpicturebackend.service.PictureService;
+import com.hl.hlpicture.domain.picture.service.PictureDomainService;
 import com.qcloud.cos.model.COSObject;
 import com.qcloud.cos.model.COSObjectInputStream;
 import com.qcloud.cos.utils.IOUtils;
@@ -32,7 +32,7 @@ public class FileController {
     private CosManager cosManager;
 
     @Resource
-    private PictureService pictureService;
+    private PictureDomainService pictureApplicationService;
 
     /**
      * 测试文件上传

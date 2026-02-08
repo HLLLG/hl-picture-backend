@@ -10,8 +10,8 @@ import com.hl.hlpicturebackend.manager.websocket.model.PictureEditActionEnum;
 import com.hl.hlpicturebackend.manager.websocket.model.PictureEditMessageTypeEnum;
 import com.hl.hlpicturebackend.manager.websocket.model.PictureEditRequestMessage;
 import com.hl.hlpicturebackend.manager.websocket.model.PictureEditResponseMessage;
-import com.hl.hlpicturebackend.model.entity.User;
-import com.hl.hlpicturebackend.service.UserService;
+import com.hl.hlpicture.domain.user.entity.User;
+import com.hl.hlpicture.application.service.UserApplicationService;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PictureEditHandler extends TextWebSocketHandler {
 
     @Resource
-    private UserService userService;
+    private UserApplicationService userApplicationService;
 
     @Resource
     @Lazy
@@ -64,7 +64,7 @@ public class PictureEditHandler extends TextWebSocketHandler {
         PictureEditResponseMessage pictureEditResponseMessage = new PictureEditResponseMessage();
         pictureEditResponseMessage.setType(PictureEditMessageTypeEnum.INFO.getValue());
         pictureEditResponseMessage.setMessage(String.format("%s加入编辑", user.getUserName()));
-        pictureEditResponseMessage.setUser(userService.getUserVO(user));
+        pictureEditResponseMessage.setUser(userApplicationService.getUserVO(user));
 
         // 广播给用一张图片的用户
         this.broadcastToPicture(pictureId, pictureEditResponseMessage);
@@ -111,7 +111,7 @@ public class PictureEditHandler extends TextWebSocketHandler {
             PictureEditResponseMessage pictureEditResponseMessage = new PictureEditResponseMessage();
             pictureEditResponseMessage.setType(PictureEditMessageTypeEnum.EXIT_EDIT.getValue());
             pictureEditResponseMessage.setMessage(String.format("%s退出编辑图片", user.getUserName()));
-            pictureEditResponseMessage.setUser(userService.getUserVO(user));
+            pictureEditResponseMessage.setUser(userApplicationService.getUserVO(user));
             this.broadcastToPicture(pictureId, pictureEditResponseMessage);
         }
 
@@ -141,7 +141,7 @@ public class PictureEditHandler extends TextWebSocketHandler {
             pictureEditResponseMessage.setType(PictureEditMessageTypeEnum.EDIT_ACTION.getValue());
             pictureEditResponseMessage.setEditAction(editAction);
             pictureEditResponseMessage.setMessage(String.format("%s执行%s", user.getUserName(), editActionEnum.getText()));
-            pictureEditResponseMessage.setUser(userService.getUserVO(user));
+            pictureEditResponseMessage.setUser(userApplicationService.getUserVO(user));
             // 广播给除了当前用户的其他用户，否则会重复编辑
             this.broadcastToPicture(pictureId, pictureEditResponseMessage, session);
         }
@@ -167,7 +167,7 @@ public class PictureEditHandler extends TextWebSocketHandler {
             PictureEditResponseMessage pictureEditResponseMessage = new PictureEditResponseMessage();
             pictureEditResponseMessage.setType(PictureEditMessageTypeEnum.ENTER_EDIT.getValue());
             pictureEditResponseMessage.setMessage(String.format("%s开始编辑图片", user.getUserName()));
-            pictureEditResponseMessage.setUser(userService.getUserVO(user));
+            pictureEditResponseMessage.setUser(userApplicationService.getUserVO(user));
             // 广播给用一张图片的用户
             this.broadcastToPicture(pictureId, pictureEditResponseMessage);
         }
@@ -191,7 +191,7 @@ public class PictureEditHandler extends TextWebSocketHandler {
         PictureEditResponseMessage pictureEditResponseMessage = new PictureEditResponseMessage();
         pictureEditResponseMessage.setType(PictureEditMessageTypeEnum.INFO.getValue());
         pictureEditResponseMessage.setMessage(String.format("%s离开编辑", user.getUserName()));
-        pictureEditResponseMessage.setUser(userService.getUserVO(user));
+        pictureEditResponseMessage.setUser(userApplicationService.getUserVO(user));
         // 广播给用一张图片的用户
         this.broadcastToPicture(pictureId, pictureEditResponseMessage);
     }

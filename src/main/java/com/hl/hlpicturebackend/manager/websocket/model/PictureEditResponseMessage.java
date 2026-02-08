@@ -1,6 +1,6 @@
 package com.hl.hlpicturebackend.manager.websocket.model;
 
-import com.hl.hlpicturebackend.model.vo.UserVO;
+import com.hl.hlpicture.interfaces.vo.user.UserVO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
