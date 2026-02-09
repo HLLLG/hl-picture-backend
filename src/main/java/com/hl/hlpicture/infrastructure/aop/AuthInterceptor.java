@@ -1,7 +1,7 @@
 package com.hl.hlpicture.infrastructure.aop;
 
 import com.hl.hlpicture.infrastructure.annotation.AuthCheck;
-import com.hl.hlpicturebackend.constant.UserConstant;
+import com.hl.hlpicture.domain.user.valueobject.UserConstant;
 import com.hl.hlpicture.infrastructure.exception.ErrorCode;
 import com.hl.hlpicture.infrastructure.exception.ThrowUtils;
 import com.hl.hlpicture.domain.user.entity.User;

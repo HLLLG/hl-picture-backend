@@ -1,9 +1,9 @@
 package com.hl.hlpicture.application.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.hl.hlpicture.interfaces.dto.space.analyze.*;
 import com.hl.hlpicture.domain.space.entity.Space;
 import com.hl.hlpicture.domain.user.entity.User;
+import com.hl.hlpicture.interfaces.dto.space.analyze.*;
 import com.hl.hlpicture.interfaces.vo.space.analyze.*;
 
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.List;
 * @author hegl
 * @createDate 2026-01-05 01:03:33
 */
-public interface SpaceAnalyzeApplicationService {
+public interface SpaceAnalyzeApplicationService extends IService<Space> {
 
     /**
      * 获取空间使用分析结果

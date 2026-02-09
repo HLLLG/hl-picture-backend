@@ -6,10 +6,12 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hl.hlpicture.application.service.PictureApplicationService;
+import com.hl.hlpicture.domain.space.entity.SpaceUser;
 import com.hl.hlpicture.infrastructure.exception.BusinessException;
 import com.hl.hlpicture.infrastructure.exception.ErrorCode;
 import com.hl.hlpicture.infrastructure.exception.ThrowUtils;
 import com.hl.hlpicture.infrastructure.mapper.SpaceMapper;
+import com.hl.hlpicture.infrastructure.mapper.SpaceUserMapper;
 import com.hl.hlpicture.interfaces.dto.space.analyze.*;
 import com.hl.hlpicture.domain.picture.entity.Picture;
 import com.hl.hlpicture.domain.space.entity.Space;
@@ -30,7 +32,7 @@ import java.util.stream.Collectors;
  * @createDate 2026-01-05 01:03:33
  */
 @Service
-public class SpaceAnalyzeApplicationServiceImpl implements SpaceAnalyzeApplicationService {
+public class SpaceAnalyzeApplicationServiceImpl extends ServiceImpl<SpaceMapper, Space> implements SpaceAnalyzeApplicationService {
 
 
     @Resource

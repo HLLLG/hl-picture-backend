@@ -62,7 +62,7 @@ mybatis-plus:
             type: CLASS_BASED
             props:
               strategy: standard
-              algorithmClassName: com.hl.hlpicturebackend.manager.sharding.PictureShardingAlgorithm
+              algorithmClassName: com.hl.hlpicture.share.sharding.PictureShardingAlgorithm
     props:
       sql-show: true
 
