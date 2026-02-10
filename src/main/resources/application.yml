@@ -8,7 +8,7 @@ server:
         max-age: 2592000
 spring:
   application:
-    name: hi-picture-backend
+    name: hi-picture-backend-ddd
   # 数据库配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -76,7 +76,7 @@ knife4j:
       default:
         api-rule: package
         api-rule-resources:
-          - com.hl.hlpicturebackend.controller
+          - com.hl.hlpicture.interfaces.controller
 # 对象存储配置
 cos:
   client:

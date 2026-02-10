@@ -3,8 +3,12 @@ package com.hl.hlpicture.domain.user.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateTime;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -16,19 +20,26 @@ import com.hl.hlpicture.infrastructure.exception.BusinessException;
 import com.hl.hlpicture.infrastructure.exception.ErrorCode;
 import com.hl.hlpicture.infrastructure.exception.ThrowUtils;
 import com.hl.hlpicture.interfaces.dto.user.UserQueryRequest;
+import com.hl.hlpicture.interfaces.dto.user.VipCode;
 import com.hl.hlpicture.interfaces.vo.user.LoginUserVO;
 import com.hl.hlpicture.interfaces.vo.user.UserVO;
 import com.hl.hlpicture.domain.user.valueobject.UserConstant;
 import com.hl.hlpicture.share.auth.StpKit;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 /**
@@ -42,6 +53,14 @@ public class UserDomainServiceImpl implements UserDomainService {
 
     @Resource
     private UserRepository userRepository;
+
+    @Resource
+    private ResourceLoader resourceLoader;
+
+    /*
+     * 文件锁，保证同一时间只有一个线程在操作文件，避免并发问题
+     */
+    private final ReentrantLock fileLock = new ReentrantLock();
 
     @Override
     public Long registerUser(String userAccount, String userPassword, String checkPassword) {
@@ -226,6 +245,69 @@ public class UserDomainServiceImpl implements UserDomainService {
     @Override
     public List<User> listByIds(Set<Long> userIdset) {
         return userRepository.listByIds(userIdset);
+    }
+
+    @Override
+    public VipCode validateAndMarkVipCode(String vipCode) {
+        // 加锁，保证同一时间只有一个线程在操作文件，避免并发问题
+        fileLock.lock();
+        try {
+            // 1. 读取 VIP 码文件，获取 VIP 码列表
+            JSONArray jsonArray = readVipCodeFile();
+            // 2. 查找匹配的 VIP 码
+            List<VipCode> codes = JSONUtil.toList(jsonArray, VipCode.class);
+            VipCode targetVipCode = codes.stream()
+                    .filter(code -> code.getCode().equals(vipCode) && !code.isHasUsed())
+                    .findFirst()
+                    .orElseThrow(() -> new BusinessException(ErrorCode.PARAMS_ERROR, "兑换码无效"));
+            // 3. 标记 VIP 码为已使用
+            targetVipCode.setHasUsed(true);
+            // 4. 将更新后的 VIP 码列表写回文件
+            writeVipCodeFile(JSONUtil.parseArray(codes));
+            return targetVipCode;
+        } finally {
+            fileLock.unlock();
+        }
+    }
+
+    private void writeVipCodeFile(JSONArray codes) {
+        try {
+            org.springframework.core.io.Resource resource = resourceLoader.getResource("classpath:biz/vipCode.json");
+            FileUtil.writeString(codes.toStringPretty(), resource.getFile(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            log.error("更新 VIP 码文件失败", e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新 VIP 码文件失败");
+        }
+
+
+    }
+
+    private JSONArray readVipCodeFile() {
+        try {
+            org.springframework.core.io.Resource resource = resourceLoader.getResource("classpath:biz/vipCode.json");
+            String content = FileUtil.readString(resource.getFile(), StandardCharsets.UTF_8);
+            return JSONUtil.parseArray(content);
+        } catch (IOException e) {
+            log.error("读取 VIP 码文件失败", e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "读取 VIP 码文件失败");
+        }
+    }
+
+
+    @Override
+    public void updateUserVipInfo(User user, String code) {
+        // 计算过期时间（时间 +1 年）
+        DateTime expireTime = DateUtil.offsetYear(new Date(), 1);
+
+        // 更新用户 VIP 信息
+        User updateUser = new User();
+        updateUser.setId(user.getId());
+        updateUser.setUserRole(UserConstant.VIP_ROLE);
+        updateUser.setVipCode(code);
+        updateUser.setVipExpireTime(expireTime);
+        // 执行更新
+        boolean result = userRepository.updateById(updateUser);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "更新用户 VIP 信息失败");
     }
 }
 

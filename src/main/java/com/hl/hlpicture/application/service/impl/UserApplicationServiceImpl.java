@@ -1,5 +1,6 @@
 package com.hl.hlpicture.application.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hl.hlpicture.application.service.UserApplicationService;
@@ -12,15 +13,18 @@ import com.hl.hlpicture.infrastructure.exception.ThrowUtils;
 import com.hl.hlpicture.interfaces.dto.user.UserLoginRequest;
 import com.hl.hlpicture.interfaces.dto.user.UserQueryRequest;
 import com.hl.hlpicture.interfaces.dto.user.UserRegisterRequest;
+import com.hl.hlpicture.interfaces.dto.user.VipCode;
 import com.hl.hlpicture.interfaces.vo.user.LoginUserVO;
 import com.hl.hlpicture.interfaces.vo.user.UserVO;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author hegl
@@ -33,7 +37,6 @@ public class UserApplicationServiceImpl implements UserApplicationService {
 
     @Resource
     private UserDomainService userDomainService;
-
 
     @Override
     public Long registerUser(UserRegisterRequest userRegisterRequest) {
@@ -156,6 +159,22 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     @Override
     public long saveUser(User userEntity) {
         return userDomainService.addUser(userEntity);
+    }
+
+
+
+    @Override
+    public boolean exchangeVip(User user, String vipCode) {
+        // 1. 校验参数
+        if (StrUtil.isBlank(vipCode)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "兑换码不能为空");
+        }
+        // 2. 读取并校验兑换码
+        VipCode targetVipCode = userDomainService.validateAndMarkVipCode(vipCode);
+
+        // 3. 更新用户信息
+        userDomainService.updateUserVipInfo(user, targetVipCode.getCode());
+        return true;
     }
 }
 

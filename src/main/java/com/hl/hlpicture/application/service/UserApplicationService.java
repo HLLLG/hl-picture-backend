@@ -106,4 +106,13 @@ public interface UserApplicationService {
     String getEncryptPassword(String userPassword);
 
     long saveUser(User userEntity);
+
+    /**
+     * 兑换会员
+     *
+     * @param user 用户信息
+     * @param vipCode 兑换码
+     * @return 是否兑换成功
+     */
+    boolean exchangeVip(User user, String vipCode);
 }

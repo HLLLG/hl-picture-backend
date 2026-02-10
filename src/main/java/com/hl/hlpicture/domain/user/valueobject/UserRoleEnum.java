@@ -10,7 +10,8 @@ import lombok.Getter;
 public enum UserRoleEnum {
 
     USER("用户","user"),
-    ADMIN("管理员","admin");
+    ADMIN("管理员","admin"),
+    VIP("会员","vip");
 
     private final String text;
 

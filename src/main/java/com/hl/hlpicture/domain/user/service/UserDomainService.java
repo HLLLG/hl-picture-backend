@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.hl.hlpicture.domain.user.entity.User;
 import com.hl.hlpicture.interfaces.dto.user.UserQueryRequest;
+import com.hl.hlpicture.interfaces.dto.user.VipCode;
 import com.hl.hlpicture.interfaces.vo.user.LoginUserVO;
 import com.hl.hlpicture.interfaces.vo.user.UserVO;
 
@@ -107,4 +108,19 @@ public interface UserDomainService {
     Page<User> page(Page<User> userPage, QueryWrapper<User> querywrapper);
 
     List<User> listByIds(Set<Long> userIdset);
+
+    /**
+     * 校验并标记 VIP 码
+     *
+     * @param vipCode
+     * @return
+     */
+    VipCode validateAndMarkVipCode(String vipCode);
+
+    /**
+     * 更新用户 VIP 信息
+     * @param user
+     * @param code
+     */
+    void updateUserVipInfo(User user, String code);
 }
